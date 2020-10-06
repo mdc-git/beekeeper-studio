@@ -130,7 +130,6 @@
             database: 'MySQL' // MySQL is the default database
           }
           const ast = parser.astify(query, opt);
-          console.log(ast);
           /**
           {
             "with": null,
@@ -170,8 +169,6 @@
           }
 
           //const sql = parser.sqlify(ast, opt);
-          console.log(countsql);
-          console.log(limitsql);
           return [countsql,limitsql,limit] 
 
       },
@@ -191,7 +188,6 @@
               Object.freeze(response)
               const countQuery = await this.connection.query(countsql).execute()
               const count = countQuery[0].rows[0]['count']
-              console.log(count)
               this.totalRecords = count
               this.resultRecords = this.result.rows.length
               const fields = response[0].fields
@@ -233,11 +229,9 @@
         //await this.connection.database.connection.streamQuery(query)
         let response = await this.connection.query(query).execute()
         Object.freeze(response)
-        console.log(response)
         
         var dataString = Papa.unparse(response[0].rows);
         Object.freeze(dataString)
-        console.log(dataString)
         const blob = new Blob([dataString], { type: 'text/csv;charset=utf-8' });
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"

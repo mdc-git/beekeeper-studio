@@ -120,8 +120,7 @@
       "@vue/typescript"
     ],
     "rules": {
-      "no-console": "off",
-      "no-unused-vars": "off"
+      "no-console": "off"
     },
     "parserOptions": {
       "parser": "@typescript-eslint/parser",

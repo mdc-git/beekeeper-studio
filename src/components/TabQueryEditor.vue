@@ -390,7 +390,6 @@
             database: 'MySQL' // MySQL is the default database
           }
           const ast = parser.astify(query, opt);
-          console.log(ast);
           /**
           {
             "with": null,
@@ -428,8 +427,6 @@
           }
 
           //const sql = parser.sqlify(ast, opt);
-          console.log(countsql);
-          console.log(limitsql);
           return [countsql,limitsql] 
 
       },
@@ -450,7 +447,6 @@
           
           this.$modal.hide('parameters-modal')
           const [countsql,limitsql] = this.parseQuery(query);
-          console.log(limitsql)
 
           this.runningQuery = this.connection.query(limitsql)
           const queryStartTime = +new Date()
