@@ -232,10 +232,9 @@
         
         var dataString = Papa.unparse(response[0].rows);
         Object.freeze(dataString)
-        const blob = new Blob([dataString], { type: 'text/csv;charset=utf-8' });
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        FileSaver.saveAs(blob, `${title}-${dateString}.csv`);
+        FileSaver.saveAs(new Blob([dataString], { type: 'text/csv;charset=utf-8' }), `${title}-${dateString}.csv`);
 
         
         this.tabulator.modules.ajax.hideLoader()

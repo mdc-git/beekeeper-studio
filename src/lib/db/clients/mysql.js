@@ -493,7 +493,8 @@ function driverExecuteQuery(conn, queryArgs) {
       logger().debug(`Resolving Query ${queryArgs.query}`)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
-
+      Object.freeze(data);
+      Object.freeze(fields)
       resolve({ data, fields });
     });
   });
