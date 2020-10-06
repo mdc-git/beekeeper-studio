@@ -7,10 +7,6 @@ import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
-import { getConnection } from 'typeorm';
-import { resolve } from 'dns';
-import { reject } from 'lodash';
-const fs = require('fs');
 
 const logger = createLogger('db:clients:mysql');
 
@@ -61,6 +57,7 @@ export default async function (server, database) {
 export function disconnect(conn) {
   conn.pool.end();
 }
+
 
 export async function listTables(conn) {
   const sql = `
@@ -493,8 +490,7 @@ function driverExecuteQuery(conn, queryArgs) {
       logger().debug(`Resolving Query ${queryArgs.query}`)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
-      Object.freeze(data);
-      Object.freeze(fields)
+
       resolve({ data, fields });
     });
   });
