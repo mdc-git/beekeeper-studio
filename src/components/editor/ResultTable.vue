@@ -15,6 +15,10 @@
   import Mutators from '../../mixins/data_mutators'
   import Statusbar from '../common/StatusBar'
   import { Parser } from 'node-sql-parser/build/mysql';
+  import _ from 'lodash'
+  import dateFormat from 'dateformat'
+  import Papa from 'papaparse';
+  import FileSaver from 'file-saver';
 
   export default {
     components: { Statusbar },
@@ -230,43 +234,16 @@
         let response = await this.connection.query(query).execute()
         Object.freeze(response)
         console.log(response)
-        let csv = "";
-        response[0].rows.forEach(row => {
-          // Pausing the connnection is useful if your processing involves I/O
-          //console.log(row)
-          for (let key in row) {
-            if (row.hasOwnProperty(key)) {
-              let col = row[key]
-            
+        
+        var dataString = Papa.unparse(response[0].rows);
+        Object.freeze(dataString)
+        console.log(dataString)
+        const blob = new Blob([dataString], { type: 'text/csv;charset=utf-8' });
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
+        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        FileSaver.saveAs(blob, `${title}-${dateString}.csv`);
 
-                switch(typeof col){
-                  case "object":
-                  col = JSON.stringify(col);
-                  break;
-
-                  case "undefined":
-                  case "null":
-                  col = "";
-                  break;
-                }
-              
-              col = '"' + String(col).split('"').join('""') + '"';
-              row[key] = col
-              
-            }
-          }
-          csv += Object.values(row).join(",")+'\n'   
-        })
-        Object.freeze(csv)
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], {
-          type: 'text.csv'
-        }));
-        a.setAttribute('download', 'test.csv');
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(a.href)
-        document.body.removeChild(a);
+        
         this.tabulator.modules.ajax.hideLoader()
         this.tabulator.restoreRedraw()
       },
