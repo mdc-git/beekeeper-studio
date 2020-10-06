@@ -7,6 +7,10 @@ import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
+import { getConnection } from 'typeorm';
+import { resolve } from 'dns';
+import { reject } from 'lodash';
+const fs = require('fs');
 
 const logger = createLogger('db:clients:mysql');
 
@@ -50,9 +54,57 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
     truncateAllTables: () => truncateAllTables(conn),
+    streamQuery: (queryText) => streamQuery(conn,queryText)
   };
 }
 
+
+
+export function streamQuery(conn,queryText) {
+  
+
+  const runQuery = (connection) => new Promise((accept, reject) => {
+    var writeStream = fs.createWriteStream('./public/users.csv');
+    console.log(queryText)
+    const query = connection.query(queryText)
+    query.on('result', function(row) {
+      // Pausing the connnection is useful if your processing involves I/O
+      connection.pause();
+      //console.log(row)
+      for (let key in row) {
+        if (row.hasOwnProperty(key)) {
+          let col = row[key]
+         
+
+            switch(typeof col){
+              case "object":
+              col = JSON.stringify(col);
+              break;
+
+              case "undefined":
+              case "null":
+              col = "";
+              break;
+            }
+          
+          col = '"' + String(col).split('"').join('""') + '"';
+          row[key] = col
+          
+        }
+      }
+      writeStream.write(Object.values(row).join(",")+'\n');
+      
+      connection.resume();
+      
+    })
+    query.on('end', function() { writeStream.end(); accept() });
+    query.on('error', reject);
+  })
+
+  return new Promise((accept, reject) => {
+    accept(runWithConnection(conn,runQuery))
+  })
+}
 
 export function disconnect(conn) {
   conn.pool.end();

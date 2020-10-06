@@ -169,6 +169,7 @@
   import TableFilter from '../../../mixins/table_filter'
 
   export default {
+    props: ['iconClass','title'],
     mixins: [TableFilter],
     components: { TableListItem, TableListSchema },
     data() {

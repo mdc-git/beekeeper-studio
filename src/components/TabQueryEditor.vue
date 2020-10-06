@@ -38,7 +38,7 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query' :connection='tab.connection'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
@@ -103,7 +103,7 @@
 </template>
 
 <script>
-
+  import { Parser } from 'node-sql-parser/build/mysql';
   import _ from 'lodash'
   import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
@@ -143,7 +143,8 @@
         marker: null,
         queryParameterValues: {},
         queryForExecution: null,
-        executeTime: 0
+        executeTime: 0,
+        limit: 1000
       }
     },
     computed: {
@@ -157,7 +158,7 @@
         return this.tab.query
       },
       queryText() {
-        return this.tab.query.text
+        return this.tab.query.text || ''
       },
       individualQueries() {
         return splitQueries(this.queryText)
@@ -382,7 +383,58 @@
           this.error = 'No query to run'
         }
       },
+      parseQuery(query) {
+          // import mysql parser only
+          const parser = new Parser();
+          const opt = {
+            database: 'MySQL' // MySQL is the default database
+          }
+          const ast = parser.astify(query, opt);
+          console.log(ast);
+          /**
+          {
+            "with": null,
+            "type": "select",
+            "options": null,
+            "distinct": null,
+            "columns": "*",
+            "from": [
+              {
+                "db": null,
+                "table": "t",
+                "as": null
+              }
+            ],
+            "where": null,
+            "groupby": null,
+            "having": null,
+            "orderby": null,
+            "limit": null
+          }
+          **/
+          let countast =  parser.astify(query, opt); 
+          countast.columns = [{"expr":{"type":"number","value":1},"as":"count"}]
+          countast.distinct = null
+
+          let countsql = parser.sqlify(countast, opt);
+
+          countsql = "SELECT SUM(count) count FROM (" + countsql + ") res"
+          
+          let limitsql = parser.sqlify(ast, opt);
+          if (!ast.limit || ast.limit.value[0].value > 1000) {
+            let limitast =  parser.astify(query, opt);
+            limitast.limit = {"seperator":"offset","value":[{"type":"number","value":1000},{"type":"number","value":0}]}
+            limitsql = parser.sqlify(limitast, opt);
+          }
+
+          //const sql = parser.sqlify(ast, opt);
+          console.log(countsql);
+          console.log(limitsql);
+          return [countsql,limitsql] 
+
+      },
       async submitQuery(rawQuery, skipModal) {
+        
         this.running = true
         this.queryForExecution = rawQuery
         this.results = []
@@ -395,24 +447,26 @@
           }
 
           const query = this.deparameterizedQuery
+          
           this.$modal.hide('parameters-modal')
+          const [countsql,limitsql] = this.parseQuery(query);
+          console.log(limitsql)
 
-          this.runningQuery = this.connection.query(query)
+          this.runningQuery = this.connection.query(limitsql)
           const queryStartTime = +new Date()
           const results = await this.runningQuery.execute()
+          Object.freeze(results)
+          const countQuery = await this.connection.query(countsql).execute()
+          const count = countQuery[0].rows[0]['count']
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
             result.rowCount = result.rowCount || 0
-
+            result.query = query
+            result.count = count
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
-              result.truncated = true
-              result.truncatedRowCount = this.$config.maxResults
-            }
           })
           this.results = results
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})

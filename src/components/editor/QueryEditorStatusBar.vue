@@ -63,7 +63,7 @@ export default {
 
     computed: {
       rowCount() {
-        return this.result && this.result.rows ? this.result.rows.length : 0
+        return this.result && this.result.rows && this.result.rows.length < 1000 ? this.result.rows.length : this.result.count
       },
       result() {
         return this.results[this.value]

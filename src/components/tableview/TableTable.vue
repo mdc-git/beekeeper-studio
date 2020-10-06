@@ -488,6 +488,7 @@ export default {
       this.tabulator.clearFilter();
     },
     dataFetch(url, config, params) {
+      
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
