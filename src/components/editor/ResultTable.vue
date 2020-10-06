@@ -226,11 +226,10 @@
         this.tabulator.blockRedraw()
       
         const query = this.result.query
-        //await this.connection.database.connection.streamQuery(query)
-        let response = await this.connection.query(query).execute()
+        const response = await this.connection.query(query).execute()
         Object.freeze(response)
         
-        var dataString = Papa.unparse(response[0].rows);
+        const dataString = Papa.unparse(response[0].rows);
         Object.freeze(dataString)
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
