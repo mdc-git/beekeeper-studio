@@ -54,8 +54,6 @@ module.exports = {
           icon: './public/icons/png/',
           category: "Development",
           target: [
-            'snap',
-            'deb',
             'appImage'
           ],
           desktop: {
