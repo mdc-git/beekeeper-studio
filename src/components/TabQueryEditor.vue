@@ -38,7 +38,7 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="1 > 0" :update="update" :active="active" :tableHeight="tableHeight" :result="result" :query='query' :connection='tab.connection'></result-table>
+      <result-table @resultupdate="updateresult" ref="table" v-else-if="1 > 0" :update="update" :active="active" :tableHeight="tableHeight" :result="result" :query='query' :connection='tab.connection'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
@@ -325,6 +325,10 @@
           await this.runningQuery.cancel()
           this.runningQuery = null
         }
+      },
+      updateresult(results) {
+      console.log(results);
+        this.results = results
       },
       download(format) {
         this.$refs.table.download(format)

@@ -158,7 +158,9 @@
 
       },
       dataFetch(url, config, params) {
-        
+        if (!this.query.text) {
+          return
+        }
         
         const result = new Promise((resolve, reject) => {
           (async () => {
@@ -171,6 +173,8 @@
               const query = this.connection.query(limitsql + offset)
               const response = await query.execute()
               Object.freeze(response)
+              
+              
               const countQuery = await this.connection.query(countsql).execute()
               const count = countQuery[0].rows[0]['count']
               this.totalRecords = count
@@ -190,7 +194,7 @@
               this.tabulator.setColumns(columns)
               const data = this.dataToTableData(response[0],columns)
               Object.freeze(data)
-
+              this.$emit('resultupdate', response);
               resolve({
                 last_page: Math.ceil(this.totalRecords / limit),
                 data
