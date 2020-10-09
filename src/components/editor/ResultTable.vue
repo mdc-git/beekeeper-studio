@@ -31,7 +31,7 @@
         resultRecords: 0
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'connection'],
+    props: ['result', 'tableHeight', 'query', 'active', 'connection', 'update'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -62,26 +62,11 @@
       statusbarMode() {
         return null
       },
-      tableData() {
-          return this.dataToTableData(this.result, this.tableColumns)
-      },
+      
       tableTruncated() {
           return this.result.truncated
       },
-      tableColumns() {
-        const columnWidth = this.result.fields.length > 20 ? 125 : undefined
-        const columns = this.result.fields.map((column) => {
-          const result = {
-            title: column.name,
-            field: column.name,
-            width: columnWidth,
-            mutatorData: this.resolveDataMutator(this.result.rows[0][column.name]),
-            formatter: this.cellFormatter
-          }
-          return result;
-        })
-        return columns
-      },
+      
       actualTableHeight() {
         return '100%'
         // let result = this.tableHeight
@@ -109,7 +94,7 @@
         ajaxRequestFunc: this.dataFetch,
         reactiveData: false,
         virtualDomHoz: true,
-        columns: this.tableColumns, //define table columns
+        //columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
         cellClick: this.cellClick,
@@ -178,7 +163,7 @@
         const result = new Promise((resolve, reject) => {
           (async () => {
             try {
-              const [countsql,limitsql,limit] = this.parseQuery(this.result.query);
+              const [countsql,limitsql,limit] = this.parseQuery(this.query.text);
               let offset = '';
               if (params.page && params.page > 1) {
                 offset = ' OFFSET ' + (params.page - 1) * limit;
@@ -189,7 +174,7 @@
               const countQuery = await this.connection.query(countsql).execute()
               const count = countQuery[0].rows[0]['count']
               this.totalRecords = count
-              this.resultRecords = this.result.rows.length
+              this.resultRecords = response[0].rows.length
               const fields = response[0].fields
               const columnWidth = fields.length > 20 ? 125 : undefined
               const columns = fields.map((column) => {
@@ -197,12 +182,12 @@
                   title: column.name,
                   field: column.name,
                   width: columnWidth,
-                  mutatorData: this.resolveDataMutator(this.result.rows[0][column.name]),
+                  mutatorData: this.resolveDataMutator(response[0].rows[0][column.name]),
                   formatter: this.cellFormatter
                 }
                 return result;
               })
-              
+              this.tabulator.setColumns(columns)
               const data = this.dataToTableData(response[0],columns)
               Object.freeze(data)
 
