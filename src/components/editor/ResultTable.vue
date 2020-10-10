@@ -53,7 +53,7 @@ export default {
     },
     tableColumns: {
       handler() {
-        this.tabulator.setColumns(this.tableColumns);
+        //this.tabulator.setColumns(this.tableColumns);
       },
     },
     tableHeight() {
@@ -80,7 +80,7 @@ export default {
       paginationElement: this.$refs.paginationArea,
       ajaxRequestFunc: this.dataFetch,
       reactiveData: false,
-      virtualDomHoz: true,
+      virtualDomHoz: false,
       height: this.actualTableHeight,
       nestedFieldSeparator: false,
       cellClick: this.cellClick,
@@ -124,15 +124,14 @@ export default {
             let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
 
             if (orderBy2 !== "") {
-              sql = `SELECT * FROM ( ${sql} ) res ${orderBy2}`;
+              sql = `SELECT * FROM ( ${sql} ) beekeeper_sort ${orderBy2}`;
             }
             console.log("->>>>", sql);
             const query = this.connection.query(sql);
             const response = await query.execute();
             Object.freeze(response);
-
             const fields = response[0].fields;
-            const columnWidth = fields.length > 20 ? 125 : undefined;
+            const columnWidth = 125;
             const columns = fields.map((column) => {
               const result = {
                 title: column.name,
@@ -145,9 +144,9 @@ export default {
               };
               return result;
             });
+            
             this.tabulator.setColumns(columns);
-            const data = this.dataToTableData(response[0], columns);
-            Object.freeze(data);
+            const data = await this.dataToTableData(response[0], columns);
             resolve({
               last_page: Math.ceil(this.meta.count / this.meta.limit),
               data,

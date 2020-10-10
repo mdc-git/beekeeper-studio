@@ -491,7 +491,7 @@ export default {
       countast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
       countast.distinct = null;
       let countsql = parser.sqlify(countast, opt);
-      countsql = `SELECT SUM(count) count FROM ( ${countsql} ) res`;
+      countsql = `SELECT SUM(count) count FROM ( ${countsql} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
       let limit =
         ast.limit && ast.limit.value[0].value < this.limit

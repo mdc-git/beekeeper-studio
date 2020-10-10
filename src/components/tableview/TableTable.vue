@@ -179,7 +179,7 @@ export default {
       // if a FK, add another column with the link
       // to the FK table.
       this.table.columns.forEach(column => {
-
+        console.log(column)
         const keyData = this.tableKeys[column.columnName]
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
