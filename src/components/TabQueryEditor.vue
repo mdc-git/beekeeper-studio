@@ -492,7 +492,7 @@ export default {
       countast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
       countast.distinct = null;
       let countsql = parser.sqlify(countast, opt);
-      countsql = "SELECT SUM(count) count FROM (" + countsql + ") res";
+      countsql = `SELECT SUM(count) count FROM ( ${countsql} ) res`;
       const countQuery = await this.connection.query(countsql).execute();
       console.log(countsql);
       let limit =
@@ -503,11 +503,11 @@ export default {
       let orderby;
       if (ast.orderby) {
         orderby = ast.orderby
-          ? ast.orderby[0].expr.column + " " + ast.orderby[0].type
+          ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}`
           : null;
       } else if (ast._orderby) {
         orderby = ast._orderby
-          ? ast._orderby[0].expr.column + " " + ast._orderby[0].type
+          ? `${ast._orderby[0].expr.column} ${ast._orderby[0].type}`
           : null;
       }
 
@@ -518,12 +518,14 @@ export default {
       ast.orderby = null;
       const basesql = parser.sqlify(ast, opt);
 
-      (this.meta.count = countQuery[0].rows[0]["count"]),
-        (this.meta.limit = limit),
-        (this.meta.offset = offset),
-        (this.meta.orderby = orderby),
-        (this.meta.basesql = basesql);
-
+      this.meta = {
+        count : countQuery[0].rows[0]["count"],
+        limit : limit,
+        offset : offset,
+        orderby : orderby,
+        basesql : basesql
+      }
+      
       console.log(this.meta);
       /**
           {
@@ -562,19 +564,12 @@ export default {
         const query = this.deparameterizedQuery;
         this.$modal.hide("parameters-modal");
         await this.parseQuery(query);
+        const sql = `${this.meta.basesql} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`
         console.log(
-          this.meta.basesql +
-            " LIMIT " +
-            this.meta.limit +
-            " OFFSET " +
-            this.meta.offset
+          sql
         );
         this.runningQuery = this.connection.query(
-          this.meta.basesql +
-            " LIMIT " +
-            this.meta.limit +
-            " OFFSET " +
-            this.meta.offset
+          sql
         );
         const queryStartTime = +new Date();
         const results = Object.freeze(await this.runningQuery.execute());

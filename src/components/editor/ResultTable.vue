@@ -30,8 +30,6 @@ export default {
     return {
       tabulator: null,
       limit: 1000,
-      totalRecords: 0,
-      resultRecords: 0,
       togglesort: "asc",
     };
   },
@@ -63,21 +61,8 @@ export default {
     },
   },
   computed: {
-    statusbarMode() {
-      return null;
-    },
-
-    tableTruncated() {
-      return this.result.truncated;
-    },
-
     actualTableHeight() {
       return "100%";
-      // let result = this.tableHeight
-      // if (this.tableHeight == 0) {
-      //   result = '100%'
-      // }
-      // return result
     },
   },
   beforeDestroy() {
@@ -87,18 +72,15 @@ export default {
   },
   async mounted() {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      //data: this.tableData, //link data to table
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
       pagination: "remote",
       paginationSize: this.meta.limit,
       paginationElement: this.$refs.paginationArea,
-      // callbacks
       ajaxRequestFunc: this.dataFetch,
       reactiveData: false,
       virtualDomHoz: true,
-      //columns: this.tableColumns, //define table columns
       height: this.actualTableHeight,
       nestedFieldSeparator: false,
       cellClick: this.cellClick,
@@ -116,17 +98,14 @@ export default {
       let limit, offset, orderBy, orderBy2;
 
       if (params.sorters[0]) {
-        orderBy2 =
-          " ORDER BY " +
-          params.sorters[0].field +
-          " " +
-          (this.togglesort = this.togglesort === "asc" ? "desc" : "asc");
+        this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
+        orderBy2 = ` ORDER BY ${params.sorters[0].field} ${this.togglesort} `;
       } else {
         orderBy2 = "";
       }
 
       if (this.meta.orderby) {
-        orderBy = " ORDER BY " + this.meta.orderby;
+        orderBy = ` ORDER BY ${this.meta.orderby} `;
       } else {
         orderBy = "";
       }
@@ -142,24 +121,16 @@ export default {
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            let sql =
-              this.meta.basesql +
-              orderBy +
-              " LIMIT " +
-              limit +
-              " OFFSET " +
-              offset;
+            let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
+
             if (orderBy2 !== "") {
-              sql = "SELECT * FROM ( " + sql + " ) res " + orderBy2;
+              sql = `SELECT * FROM ( ${sql} ) res ${orderBy2}`;
             }
             console.log("->>>>", sql);
             const query = this.connection.query(sql);
             const response = await query.execute();
             Object.freeze(response);
 
-            const count = this.meta.count;
-            this.totalRecords = count;
-            this.resultRecords = response[0].rows.length;
             const fields = response[0].fields;
             const columnWidth = fields.length > 20 ? 125 : undefined;
             const columns = fields.map((column) => {
