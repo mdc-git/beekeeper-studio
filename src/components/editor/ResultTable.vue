@@ -31,6 +31,7 @@ export default {
       tabulator: null,
       limit: 1000,
       togglesort: "asc",
+      orderBy: ''
     };
   },
   props: ["result", "tableHeight", "query", "active", "connection", "meta"],
@@ -99,6 +100,7 @@ export default {
 
       if (this.meta.orderby) {
         orderBy = ` ORDER BY ${this.meta.orderby} `;
+        this.orderBy = orderBy;
       } else {
         orderBy = "";
       }
@@ -196,9 +198,9 @@ export default {
     async download() {
       this.tabulator.modules.ajax.showLoader();
       this.tabulator.blockRedraw();
-
-      const query = this.meta.basesql;
-      const response = await this.connection.query(query).execute();
+      let sql = `${this.meta.basesql} ${this.orderBy} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`;
+      
+      const response = await this.connection.query(sql).execute();
       Object.freeze(response);
 
       const dataString = Papa.unparse(response[0].rows);

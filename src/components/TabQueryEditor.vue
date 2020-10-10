@@ -200,7 +200,7 @@ import ResultTable from "./editor/ResultTable";
 import sqlFormatter from "sql-formatter";
 
 import QueryEditorStatusBar from "./editor/QueryEditorStatusBar";
-
+const parser = new Parser();
 export default {
   // this.queryText holds the current editor value, always
   components: { ResultTable, ProgressBar, QueryEditorStatusBar },
@@ -480,50 +480,41 @@ export default {
       }
     },
     async parseQuery(query) {
-      // import mysql parser only
-      const parser = new Parser();
-      const opt = {
-        database: "MySQL", // MySQL is the default database
-      };
+      // import mysql parser only      
 
-      let ast = parser.astify(query, opt);
-      let countast = await parser.astify(query, opt);
+      let ast = parser.astify(query);
+      let countast = JSON.parse(JSON.stringify(ast));
       countast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
       countast.distinct = null;
-      let countsql = parser.sqlify(countast, opt);
+      let countsql = parser.sqlify(countast);
       countsql = `SELECT SUM(count) count FROM ( ${countsql} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
-      let limit =
-        ast.limit && ast.limit.value[0].value < this.limit
-          ? ast.limit.value[0].value
-          : this.limit;
+      
+      
+      let syntaxast = JSON.parse(JSON.stringify(ast));
+      syntaxast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
+      syntaxast.limit = {value:[{value:1}]}
+      let syntaxsql = parser.sqlify(countast);
+      await this.connection.query(syntaxsql).execute();
 
-      let orderby;
-      if (ast.orderby) {
-        orderby = ast.orderby
-          ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}`
-          : null;
-      } else if (ast._orderby) {
-        orderby = ast._orderby
-          ? `${ast._orderby[0].expr.column} ${ast._orderby[0].type}`
-          : null;
+      this.meta = {
+        count: countQuery[0]?.rows[0]["count"],
+        limit: ast?.limit?.value[0]?.value ?? this.limit,
+        offset: ast?.limit?.value[1]?.value ?? 0,
+        orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
+      };
+
+      if(this.meta.limit > this.limit) {
+        this.meta.limit = this.limit
       }
 
-      let offset =
-        ast.limit && ast.limit.value[1] ? ast.limit.value[1].value : 0;
       ast.limit = null;
       ast._orderby = null;
       ast.orderby = null;
-      const basesql = parser.sqlify(ast, opt);
+      this.meta.basesql = parser.sqlify(ast);
+      console.log(this.meta)
 
-      this.meta = {
-        count: countQuery[0].rows[0]["count"],
-        limit: limit,
-        offset: offset,
-        orderby: orderby,
-        basesql: basesql,
-      };
-
+      
       /**
           {
             "with": null,
