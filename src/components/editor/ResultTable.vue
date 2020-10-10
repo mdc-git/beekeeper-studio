@@ -193,7 +193,7 @@ export default {
     async download() {
       this.tabulator.modules.ajax.showLoader();
       this.tabulator.blockRedraw();
-      let sql = `${this.meta.basesql} ${this.orderBy} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`;
+      let sql = `${this.meta.basesql} ${this.orderBy} LIMIT ${this.meta.origlimit} OFFSET ${this.meta.offset}`;
 
       const response = await this.connection.query(sql).execute();
       Object.freeze(response);

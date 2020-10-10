@@ -503,7 +503,7 @@ export default {
         offset: ast?.limit?.value[1]?.value ?? 0,
         orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
       };
-
+      this.meta.origlimit = this.meta.limit
       if(this.meta.limit > this.limit) {
         this.meta.limit = this.limit
       }
