@@ -487,14 +487,12 @@ export default {
       };
 
       let ast = parser.astify(query, opt);
-      console.log("ast", ast, query);
       let countast = await parser.astify(query, opt);
       countast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
       countast.distinct = null;
       let countsql = parser.sqlify(countast, opt);
       countsql = `SELECT SUM(count) count FROM ( ${countsql} ) res`;
       const countQuery = await this.connection.query(countsql).execute();
-      console.log(countsql);
       let limit =
         ast.limit && ast.limit.value[0].value < this.limit
           ? ast.limit.value[0].value
@@ -519,14 +517,13 @@ export default {
       const basesql = parser.sqlify(ast, opt);
 
       this.meta = {
-        count : countQuery[0].rows[0]["count"],
-        limit : limit,
-        offset : offset,
-        orderby : orderby,
-        basesql : basesql
-      }
-      
-      console.log(this.meta);
+        count: countQuery[0].rows[0]["count"],
+        limit: limit,
+        offset: offset,
+        orderby: orderby,
+        basesql: basesql,
+      };
+
       /**
           {
             "with": null,
@@ -564,13 +561,8 @@ export default {
         const query = this.deparameterizedQuery;
         this.$modal.hide("parameters-modal");
         await this.parseQuery(query);
-        const sql = `${this.meta.basesql} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`
-        console.log(
-          sql
-        );
-        this.runningQuery = this.connection.query(
-          sql
-        );
+        const sql = `${this.meta.basesql} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`;
+        this.runningQuery = this.connection.query(sql);
         const queryStartTime = +new Date();
         const results = Object.freeze(await this.runningQuery.execute());
         const queryEndTime = +new Date();
