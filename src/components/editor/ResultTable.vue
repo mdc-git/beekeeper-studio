@@ -125,24 +125,22 @@ export default {
       }
 
       //let maxpage = Math.ceil(this.meta.count/limit)
+      limit = this.meta.limit
+      offset = this.meta.offset
 
       if (this.togglesort === "asc") {
-        limit = this.meta.limit
-        offset = this.meta.offset
         if (params.page) {
           offset = (params.page - 1) * this.meta.limit;
           limit = Math.min(this.limit,this.meta.count - offset)
-          offset += this.meta.offset
         }
       } else {
-        limit = this.meta.limit
-        offset = this.meta.offset
         if (params.page) {
           offset = Math.max(0,this.meta.count - params.page * this.limit);
           limit = Math.min(this.limit,this.meta.count - (params.page - 1) * this.meta.limit)
-          offset += this.meta.offset
         }
       }
+      
+      offset += this.meta.offset
 
       const result = new Promise((resolve, reject) => {
         (async () => {
