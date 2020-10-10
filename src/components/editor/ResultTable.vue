@@ -97,17 +97,21 @@ export default {
     dataFetch(url, config, params) {
       let limit, offset, orderBy, orderBy2;
 
-      if (params.sorters[0]) {
-        this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
-        orderBy2 = ` ORDER BY ${params.sorters[0].field} ${this.togglesort} `;
-      } else {
-        orderBy2 = "";
-      }
-
       if (this.meta.orderby) {
         orderBy = ` ORDER BY ${this.meta.orderby} `;
       } else {
         orderBy = "";
+      }
+
+      if (params.sorters[0]) {
+        if (this.page === params.page || !this.page) {
+          this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
+        }
+
+        this.page = params.page;
+        orderBy2 = ` ORDER BY ${params.sorters[0].field} ${this.togglesort} `;
+      } else {
+        orderBy2 = "";
       }
 
       if (params.size) {
@@ -118,12 +122,29 @@ export default {
         offset = this.meta.offset || (params.page - 1) * limit;
       }
 
+      if (this.togglesort === "asc") {
+        limit = Math.min(this.meta.limit,this.meta.count - (params.page - 1) * limit)
+        offset = this.meta.offset
+        if (params.page) {
+          offset = (params.page - 1) * this.limit;
+        }
+      } else {
+        limit = Math.min(this.meta.limit,this.meta.count - (params.page - 1) * limit)
+        offset = offset = this.meta.offset
+        if (params.page) {
+          offset = this.meta.count - params.page * this.limit;
+          offset = offset < 0 ? 0 : offset 
+        }
+      }
+
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
+            
             let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
 
             if (orderBy2 !== "") {
+              sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
               sql = `SELECT * FROM ( ${sql} ) beekeeper_sort ${orderBy2}`;
             }
             console.log("->>>>", sql);
@@ -144,7 +165,7 @@ export default {
               };
               return result;
             });
-            
+
             this.tabulator.setColumns(columns);
             const data = await this.dataToTableData(response[0], columns);
             resolve({
