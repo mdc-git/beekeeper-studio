@@ -38,7 +38,7 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
-      <result-table @resultupdate="updateresult" ref="table" v-else-if="1 > 0" :update="update" :active="active" :tableHeight="tableHeight" :result="result" :query='query' :connection='tab.connection'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query' :connection='tab.connection' :meta='this.meta'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
@@ -145,7 +145,7 @@
         queryForExecution: null,
         executeTime: 0,
         limit: 1000,
-        update: true
+        meta: {}
       }
     },
     computed: {
@@ -326,10 +326,7 @@
           this.runningQuery = null
         }
       },
-      updateresult(results) {
-      console.log(results);
-        this.results = results
-      },
+      
       download(format) {
         this.$refs.table.download(format)
       },
@@ -388,13 +385,36 @@
           this.error = 'No query to run'
         }
       },
-      parseQuery(query) {
+      async parseQuery(query) {
           // import mysql parser only
           const parser = new Parser();
           const opt = {
             database: 'MySQL' // MySQL is the default database
           }
-          const ast = parser.astify(query, opt);
+
+          let ast = parser.astify(query, opt);
+          
+          let countast =  parser.astify(query, opt); 
+          countast.columns = [{"expr":{"type":"number","value":1},"as":"count"}]
+          countast.distinct = null
+          let countsql = parser.sqlify(countast, opt);
+          countsql = "SELECT SUM(count) count FROM (" + countsql + ") res"
+          const countQuery = await this.connection.query(countsql).execute()
+          console.log(countsql)
+          let limit = ( ast.limit && ast.limit.value[0].value < this.limit ) ? ast.limit.value[0].value : this.limit
+          let offset = ( ast.limit && ast.limit.value[1]) ? ast.limit.value[1].value : 0
+          ast.limit = null
+          ast._orderby = null
+          const basesql = parser.sqlify(ast, opt);
+          
+            this.meta.count= countQuery[0].rows[0]['count'],
+            this.meta.limit= limit,
+            this.meta.offset= offset,
+            this.meta.orderby= 1,
+            this.meta.basesql= basesql
+          
+          
+          console.log(this.meta)
           /**
           {
             "with": null,
@@ -416,28 +436,10 @@
             "limit": null
           }
           **/
-          let countast =  parser.astify(query, opt); 
-          countast.columns = [{"expr":{"type":"number","value":1},"as":"count"}]
-          countast.distinct = null
-
-          let countsql = parser.sqlify(countast, opt);
-
-          countsql = "SELECT SUM(count) count FROM (" + countsql + ") res"
-          
-          let limitsql = parser.sqlify(ast, opt);
-          if (!ast.limit || ast.limit.value[0].value > 1000) {
-            let limitast =  parser.astify(query, opt);
-            limitast.limit = {"seperator":"offset","value":[{"type":"number","value":1000},{"type":"number","value":0}]}
-            limitsql = parser.sqlify(limitast, opt);
-          }
-
-          //const sql = parser.sqlify(ast, opt);
-          return [countsql,limitsql] 
 
       },
-      async submitQuery() {
-        this.update = !this.update
-        /**this.running = true
+      async submitQuery(rawQuery, skipModal) {
+        this.running = true
         this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
@@ -449,35 +451,25 @@
           }
 
           const query = this.deparameterizedQuery
-          
           this.$modal.hide('parameters-modal')
-          const [countsql,limitsql] = this.parseQuery(query);
-
-          this.runningQuery = this.connection.query(limitsql)
+          this.parseQuery(query);
+          this.runningQuery = this.connection.query(this.meta.basesql)
           const queryStartTime = +new Date()
-          const results = await this.runningQuery.execute()
-          Object.freeze(results)
-          const countQuery = await this.connection.query(countsql).execute()
-          const count = countQuery[0].rows[0]['count']
+          const results = Object.freeze(await this.runningQuery.execute())
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
-          let totalRows = 0
           results.forEach(result => {
             result.rowCount = result.rowCount || 0
-            result.query = query
-            result.count = count
-            // TODO (matthew): remove truncation logic somewhere sensible
-            totalRows += result.rowCount
           })
           this.results = results
-          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+          this.$store.dispatch('logQuery', { text: query, rowCount: this.meta.count})
         } catch (ex) {
           if(this.running) {
             this.error = ex
           }
         } finally {
           this.running = false
-        }**/
+        }
       },
       inQuote() {
         return false

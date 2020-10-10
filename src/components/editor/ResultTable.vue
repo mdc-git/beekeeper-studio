@@ -14,7 +14,6 @@
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
   import Statusbar from '../common/StatusBar'
-  import { Parser } from 'node-sql-parser/build/mysql';
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Papa from 'papaparse';
@@ -31,7 +30,7 @@
         resultRecords: 0
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'connection', 'update'],
+    props: ['result', 'tableHeight', 'query', 'active', 'connection', 'meta'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -108,75 +107,39 @@
       });
     },
     methods: {
-      parseQuery(query) {
-          // import mysql parser only
-          const parser = new Parser();
-          const opt = {
-            database: 'MySQL' // MySQL is the default database
-          }
-          const ast = parser.astify(query, opt);
-          /**
-          {
-            "with": null,
-            "type": "select",
-            "options": null,
-            "distinct": null,
-            "columns": "*",
-            "from": [
-              {
-                "db": null,
-                "table": "t",
-                "as": null
-              }
-            ],
-            "where": null,
-            "groupby": null,
-            "having": null,
-            "orderby": null,
-            "limit": null
-          }
-          **/
-          let countast =  parser.astify(query, opt); 
-          countast.columns = [{"expr":{"type":"number","value":1},"as":"count"}]
-          countast.distinct = null
-          let countsql = parser.sqlify(countast, opt);
-
-          countsql = "SELECT SUM(count) count FROM (" + countsql + ") res"
-          
-          let limitsql = parser.sqlify(ast, opt);
-          let limit = 1000
-          if (!ast.limit || ast.limit.value[0].value > 1000) {
-            let limitast =  parser.astify(query, opt);
-            limitast.limit = {"seperator":"offset","value":[{"type":"number","value":this.limit}]}
-            limitsql = parser.sqlify(limitast, opt);
-          } else {
-            limit = ast.limit.value[0].value
-          }
-
-          //const sql = parser.sqlify(ast, opt);
-          return [countsql,limitsql,limit] 
-
-      },
+      
       dataFetch(url, config, params) {
-        if (!this.query.text) {
-          return
-        }
+        let offset = this.meta.offset;
+        let limit = this.meta.limit;
+        //let orderBy = this.meta.orderby;
+        
+        
+
+          if (params.sorters) {
+            console.log(params.sorters)
+            //orderBy = params.sorters
+          }
+
+          if (params.size) {
+            limit = params.size
+          }
+
+          if (params.page) {
+            offset = (params.page - 1) * limit;
+          }
+
+      
         
         const result = new Promise((resolve, reject) => {
           (async () => {
             try {
-              const [countsql,limitsql,limit] = this.parseQuery(this.query.text);
-              let offset = '';
-              if (params.page && params.page > 1) {
-                offset = ' OFFSET ' + (params.page - 1) * limit;
-              }
-              const query = this.connection.query(limitsql + offset)
+              const query = this.connection.query(this.meta.basesql + ' LIMIT ' + limit + ' OFFSET ' + offset )
               const response = await query.execute()
               Object.freeze(response)
               
               
-              const countQuery = await this.connection.query(countsql).execute()
-              const count = countQuery[0].rows[0]['count']
+              
+              const count = this.meta.count
               this.totalRecords = count
               this.resultRecords = response[0].rows.length
               const fields = response[0].fields
@@ -194,9 +157,8 @@
               this.tabulator.setColumns(columns)
               const data = this.dataToTableData(response[0],columns)
               Object.freeze(data)
-              this.$emit('resultupdate', response);
               resolve({
-                last_page: Math.ceil(this.totalRecords / limit),
+                last_page: Math.ceil(this.meta.count / this.meta.limit),
                 data
               });
             } catch (error) {
