@@ -124,27 +124,22 @@ export default {
         offset = this.meta.offset || (params.page - 1) * limit;
       }
 
-      let maxpage = Math.ceil(this.meta.count/limit)
+      //let maxpage = Math.ceil(this.meta.count/limit)
 
       if (this.togglesort === "asc") {
         limit = this.meta.limit
         offset = this.meta.offset
         if (params.page) {
           offset = (params.page - 1) * this.meta.limit;
-          if (params.page === maxpage) {
-            limit = this.meta.count - offset
-          }
+          limit = Math.min(this.limit,this.meta.count - offset)
           offset += this.meta.offset
         }
       } else {
         limit = this.meta.limit
         offset = this.meta.offset
         if (params.page) {
-          offset = this.meta.count - params.page * this.limit;
-          if (params.page === maxpage) {
-            offset = 0;
-            limit = this.meta.count - (params.page - 1) * this.meta.limit
-          }
+          offset = Math.max(0,this.meta.count - params.page * this.limit);
+          limit = Math.min(this.limit,this.meta.count - (params.page - 1) * this.meta.limit)
           offset += this.meta.offset
         }
       }
