@@ -132,6 +132,7 @@ export default {
           if (params.page === maxpage) {
             limit = this.meta.count - offset
           }
+          offset += this.meta.offset
         }
       } else {
         limit = this.meta.limit
@@ -142,6 +143,7 @@ export default {
             offset = 0;
             limit = this.meta.count - (params.page - 1) * this.meta.limit
           }
+          offset += this.meta.offset
         }
       }
 
