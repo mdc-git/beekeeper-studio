@@ -31,7 +31,7 @@ export default {
       tabulator: null,
       limit: 1000,
       togglesort: "asc",
-      orderBy: ''
+      orderBy: "",
     };
   },
   props: ["result", "tableHeight", "query", "active", "connection", "meta"],
@@ -125,27 +125,29 @@ export default {
       }
 
       //let maxpage = Math.ceil(this.meta.count/limit)
-      limit = this.meta.limit
-      offset = this.meta.offset
+      limit = this.meta.limit;
+      offset = this.meta.offset;
 
       if (this.togglesort === "asc") {
         if (params.page) {
           offset = (params.page - 1) * this.meta.limit;
-          limit = Math.min(this.limit,this.meta.count - offset)
+          limit = Math.min(this.limit, this.meta.count - offset);
         }
       } else {
         if (params.page) {
-          offset = Math.max(0,this.meta.count - params.page * this.limit);
-          limit = Math.min(this.limit,this.meta.count - (params.page - 1) * this.meta.limit)
+          offset = Math.max(0, this.meta.count - params.page * this.limit);
+          limit = Math.min(
+            this.limit,
+            this.meta.count - (params.page - 1) * this.meta.limit
+          );
         }
       }
-      
-      offset += this.meta.offset
+
+      offset += this.meta.offset;
 
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            
             let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
 
             if (orderBy2 !== "") {
@@ -192,7 +194,7 @@ export default {
       this.tabulator.modules.ajax.showLoader();
       this.tabulator.blockRedraw();
       let sql = `${this.meta.basesql} ${this.orderBy} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`;
-      
+
       const response = await this.connection.query(sql).execute();
       Object.freeze(response);
 
