@@ -6,7 +6,7 @@
         <span
           ref="paginationArea"
           class="tabulator-paginator"
-          v-show="this.meta.count > this.meta.limit"
+          v-show="this.meta.count > this.limit"
         ></span>
       </div>
     </statusbar>
@@ -77,11 +77,11 @@ export default {
       ajaxSorting: true,
       ajaxFiltering: true,
       pagination: "remote",
-      paginationSize: this.meta.limit,
+      paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
       ajaxRequestFunc: this.dataFetch,
       reactiveData: false,
-      virtualDomHoz: false,
+      virtualDomHoz: true,
       height: this.actualTableHeight,
       nestedFieldSeparator: false,
       cellClick: this.cellClick,
@@ -96,7 +96,15 @@ export default {
   },
   methods: {
     dataFetch(url, config, params) {
-      let limit, offset, orderBy, orderBy2;
+
+      const records_per_page = this.limit
+      const records = this.meta.count
+      const last_page = Math.ceil(records/records_per_page)
+      const page = params?.page ?? 1
+
+      let limit, offset
+
+      let orderBy, orderBy2;
 
       if (this.meta.orderby) {
         orderBy = ` ORDER BY ${this.meta.orderby} `;
@@ -106,44 +114,24 @@ export default {
       }
 
       if (params.sorters[0]) {
-        if (this.page === params.page || !this.page) {
+        if (this.page === page || !this.page) {
           this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
         }
-
-        this.page = params.page;
+        this.page = page;
         orderBy2 = ` ORDER BY ${params.sorters[0].field} ${this.togglesort} `;
       } else {
         orderBy2 = "";
       }
 
-      if (params.size) {
-        limit = this.meta.limit || params.size;
-      }
-
-      if (params.page) {
-        offset = this.meta.offset || (params.page - 1) * limit;
-      }
-
-      //let maxpage = Math.ceil(this.meta.count/limit)
-      limit = this.meta.limit;
-      offset = this.meta.offset;
-
       if (this.togglesort === "asc") {
-        if (params.page) {
-          offset = (params.page - 1) * this.meta.limit;
-          limit = Math.min(this.limit, this.meta.count - offset);
-        }
+        offset = (page-1) * records_per_page
+        limit = page === last_page ? records - offset :  records_per_page
       } else {
-        if (params.page) {
-          offset = Math.max(0, this.meta.count - params.page * this.limit);
-          limit = Math.min(
-            this.limit,
-            this.meta.count - (params.page - 1) * this.meta.limit
-          );
-        }
+        offset = page === last_page ? 0 : records - page * records_per_page
+        limit = page === last_page ? records - (page-1) * records_per_page :  records_per_page
       }
 
-      offset += this.meta.offset;
+      offset += this.meta.offset
 
       const result = new Promise((resolve, reject) => {
         (async () => {
@@ -176,7 +164,7 @@ export default {
             this.tabulator.setColumns(columns);
             const data = await this.dataToTableData(response[0], columns);
             resolve({
-              last_page: Math.ceil(this.meta.count / this.meta.limit),
+              last_page: last_page,
               data,
             });
           } catch (error) {
@@ -193,9 +181,8 @@ export default {
     async download() {
       this.tabulator.modules.ajax.showLoader();
       this.tabulator.blockRedraw();
-      let sql = `${this.meta.basesql} ${this.orderBy} LIMIT ${this.meta.origlimit} OFFSET ${this.meta.offset}`;
-
-      const response = await this.connection.query(sql).execute();
+      
+      const response = await this.connection.query(this.query.text).execute();
       Object.freeze(response);
 
       const dataString = Papa.unparse(response[0].rows);

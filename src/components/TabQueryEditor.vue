@@ -499,15 +499,11 @@ export default {
 
       this.meta = {
         count: countQuery[0]?.rows[0]["count"],
-        limit: ast?.limit?.value[0]?.value ?? this.limit,
+        limit: ast?.limit?.value[0]?.value,
         offset: ast?.limit?.value[1]?.value ?? 0,
         orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
       };
-      this.meta.origlimit = this.meta.limit
-      if(this.meta.limit > this.limit) {
-        this.meta.limit = this.limit
-      }
-
+      
       ast.limit = null;
       ast._orderby = null;
       ast.orderby = null;
@@ -552,7 +548,10 @@ export default {
         const query = this.deparameterizedQuery;
         this.$modal.hide("parameters-modal");
         await this.parseQuery(query);
-        const sql = `${this.meta.basesql} LIMIT ${this.meta.limit} OFFSET ${this.meta.offset}`;
+        let limit = this.meta.limit ?? this.limit
+        let offset = this.meta.offset
+        const sql = `${this.meta.basesql} LIMIT ${limit} OFFSET ${offset}`;
+        console.log(sql)
         this.runningQuery = this.connection.query(sql);
         const queryStartTime = +new Date();
         const results = Object.freeze(await this.runningQuery.execute());
