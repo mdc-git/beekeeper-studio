@@ -483,18 +483,13 @@ export default {
       // import mysql parser only      
 
       let ast = parser.astify(query);
-      let countast = JSON.parse(JSON.stringify(ast));
-      countast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
-      countast.distinct = null;
-      let countsql = parser.sqlify(countast);
-      countsql = `SELECT SUM(count) count FROM ( ${countsql} ) beekeeper_count`;
+      let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
       
       
       let syntaxast = JSON.parse(JSON.stringify(ast));
-      syntaxast.columns = [{ expr: { type: "number", value: 1 }, as: "count" }];
       syntaxast.limit = {value:[{value:1}]}
-      let syntaxsql = parser.sqlify(countast);
+      let syntaxsql = parser.sqlify(syntaxast);
       await this.connection.query(syntaxsql).execute();
 
       this.meta = {
