@@ -548,7 +548,7 @@ export default {
         const query = this.deparameterizedQuery;
         this.$modal.hide("parameters-modal");
         await this.parseQuery(query);
-        let limit = this.meta.limit ?? this.limit
+        let limit = this.meta.limit ? Math.min(this.meta.limit,this.limit) : this.limit
         let offset = this.meta.offset
         const sql = `${this.meta.basesql} LIMIT ${limit} OFFSET ${offset}`;
         console.log(sql)
