@@ -96,16 +96,20 @@ export default {
   },
   methods: {
     dataFetch(url, config, params) {
-
+      // page size
       const records_per_page = this.limit
+      // total result count
       const records = this.meta.count
+      // last page
       const last_page = Math.ceil(records/records_per_page)
+      // current page
       const page = params?.page ?? 1
 
       let limit, offset
 
       let orderBy, orderBy2;
 
+      // original ordering
       if (this.meta.orderby) {
         orderBy = ` ORDER BY ${this.meta.orderby} `;
         this.orderBy = orderBy;
@@ -113,6 +117,7 @@ export default {
         orderBy = "";
       }
 
+      // column sorting
       if (params.sorters[0]) {
         if (this.page === page || !this.page) {
           this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
@@ -123,6 +128,7 @@ export default {
         orderBy2 = "";
       }
 
+      // limit, offset
       if (this.togglesort === "asc") {
         offset = (page-1) * records_per_page
         limit = page === last_page ? records - offset :  records_per_page
@@ -139,9 +145,11 @@ export default {
             let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
 
             if (orderBy2 !== "") {
+              // limit, offset for column sorting
               let limit = this.limit
               offset = (page-1) * records_per_page
               sql = `${this.meta.basesql} ${orderBy}`;
+              // get paged column sorted result
               sql = `SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
             }
             console.log("->>>>", sql);

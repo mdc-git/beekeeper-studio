@@ -480,18 +480,20 @@ export default {
       }
     },
     async parseQuery(query) {
-      // import mysql parser only      
-
+      // astify sql
       let ast = parser.astify(query);
+
+      // get total result count
       let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
       
-      
+      // check syntax with a limit of 1
       let syntaxast = JSON.parse(JSON.stringify(ast));
       syntaxast.limit = {value:[{value:1}]}
       let syntaxsql = parser.sqlify(syntaxast);
       await this.connection.query(syntaxsql).execute();
 
+      // query meta information
       this.meta = {
         count: countQuery[0]?.rows[0]["count"],
         limit: ast?.limit?.value[0]?.value,
@@ -499,9 +501,11 @@ export default {
         orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
       };
       
+      // strip limit, offset and ordering to get base query
       ast.limit = null;
       ast._orderby = null;
       ast.orderby = null;
+      // sqlify ast
       this.meta.basesql = parser.sqlify(ast);
       console.log(this.meta)
 
@@ -528,6 +532,7 @@ export default {
           }
           **/
     },
+
     async submitQuery(rawQuery, skipModal) {
       this.running = true;
       this.queryForExecution = rawQuery;
@@ -542,13 +547,17 @@ export default {
 
         const query = this.deparameterizedQuery;
         this.$modal.hide("parameters-modal");
+        // get query meta information
         await this.parseQuery(query);
+        // pagesize
         let limit = this.meta.limit ? Math.min(this.meta.limit,this.limit) : this.limit
+        // original offset
         let offset = this.meta.offset
+        // get first page
         const sql = `${this.meta.basesql} LIMIT ${limit} OFFSET ${offset}`;
-        console.log(sql)
         this.runningQuery = this.connection.query(sql);
         const queryStartTime = +new Date();
+        // freeze result, make "un"reactive
         const results = Object.freeze(await this.runningQuery.execute());
         const queryEndTime = +new Date();
         this.executeTime = queryEndTime - queryStartTime;
