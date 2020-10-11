@@ -139,8 +139,10 @@ export default {
             let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
 
             if (orderBy2 !== "") {
-              sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
-              sql = `SELECT * FROM ( ${sql} ) beekeeper_sort ${orderBy2}`;
+              let limit = this.limit
+              offset = (page-1) * records_per_page
+              sql = `${this.meta.basesql} ${orderBy}`;
+              sql = `SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
             }
             console.log("->>>>", sql);
             const query = this.connection.query(sql);
