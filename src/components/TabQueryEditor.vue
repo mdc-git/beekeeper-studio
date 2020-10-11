@@ -495,9 +495,13 @@ export default {
 
       // query meta information
       this.meta = {
+        // total result count
         count: countQuery[0]?.rows[0]["count"],
+        // original limit
         limit: ast?.limit?.value[0]?.value,
+        // original offset
         offset: ast?.limit?.value[1]?.value ?? 0,
+        // original ordering
         orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
       };
       

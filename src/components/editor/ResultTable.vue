@@ -137,6 +137,7 @@ export default {
         limit = page === last_page ? records - (page-1) * records_per_page :  records_per_page
       }
 
+      // apply offset of original query
       offset += this.meta.offset
 
       const result = new Promise((resolve, reject) => {
