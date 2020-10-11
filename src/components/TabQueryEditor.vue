@@ -185,7 +185,6 @@
 </template>
 
 <script>
-import { Parser } from "node-sql-parser/build/mysql";
 import _ from "lodash";
 import "codemirror/addon/search/searchcursor";
 import CodeMirror from "codemirror";
@@ -200,7 +199,6 @@ import ResultTable from "./editor/ResultTable";
 import sqlFormatter from "sql-formatter";
 
 import QueryEditorStatusBar from "./editor/QueryEditorStatusBar";
-const parser = new Parser();
 export default {
   // this.queryText holds the current editor value, always
   components: { ResultTable, ProgressBar, QueryEditorStatusBar },
@@ -479,40 +477,23 @@ export default {
         this.error = "No query to run";
       }
     },
-    async parseQuery(query) {
-      // astify sql
-      let ast = parser.astify(query);
+    async parseQuery() {
+      
 
       // get total result count
       let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
       
-      // check syntax with a limit of 1
-      let syntaxast = JSON.parse(JSON.stringify(ast));
-      syntaxast.limit = {value:[{value:1}]}
-      let syntaxsql = parser.sqlify(syntaxast);
-      await this.connection.query(syntaxsql).execute();
+      
 
       // query meta information
       this.meta = {
         // total result count
         count: countQuery[0]?.rows[0]["count"],
-        // original limit
-        limit: ast?.limit?.value[0]?.value,
-        // original offset
-        offset: ast?.limit?.value[1]?.value ?? 0,
-        // original ordering
-        orderby: ast.orderby ? `${ast.orderby[0].expr.column} ${ast.orderby[0].type}` : null,
+        
       };
       
-      // strip limit, offset and ordering to get base query
-      ast.limit = null;
-      ast._orderby = null;
-      ast.orderby = null;
-      // sqlify ast
-      this.meta.basesql = parser.sqlify(ast);
-      console.log(this.meta)
-
+    
       
       /**
           {
@@ -554,11 +535,11 @@ export default {
         // get query meta information
         await this.parseQuery(query);
         // pagesize
-        let limit = this.meta.limit ? Math.min(this.meta.limit,this.limit) : this.limit
+        let limit = this.limit
         // original offset
-        let offset = this.meta.offset
+        let offset = 0
         // get first page
-        const sql = `${this.meta.basesql} LIMIT ${limit} OFFSET ${offset}`;
+        const sql = `SELECT * FROM ( ${this.query.text}  ) beekeper_init LIMIT ${limit} OFFSET ${offset}`;
         this.runningQuery = this.connection.query(sql);
         const queryStartTime = +new Date();
         // freeze result, make "un"reactive

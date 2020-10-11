@@ -107,15 +107,9 @@ export default {
 
       let limit, offset
 
-      let orderBy, orderBy2;
+      let orderBy2;
 
-      // original ordering
-      if (this.meta.orderby) {
-        orderBy = ` ORDER BY ${this.meta.orderby} `;
-        this.orderBy = orderBy;
-      } else {
-        orderBy = "";
-      }
+      
 
       // column sorting
       if (params.sorters[0]) {
@@ -137,22 +131,14 @@ export default {
         limit = page === last_page ? records - (page-1) * records_per_page :  records_per_page
       }
 
-      // apply offset of original query
-      offset += this.meta.offset
-
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            let sql = `${this.meta.basesql} ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
-
             if (orderBy2 !== "") {
-              // limit, offset for column sorting
-              let limit = this.limit
-              offset = (page-1) * records_per_page
-              sql = `${this.meta.basesql} ${orderBy}`;
-              // get paged column sorted result
-              sql = `SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+              limit = this.limit
+              offset = offset = (page-1) * records_per_page
             }
+            let sql = `SELECT * FROM ( SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} ) beekeper_limit LIMIT ${limit} OFFSET ${offset}`;
             console.log("->>>>", sql);
             const query = this.connection.query(sql);
             const response = await query.execute();
