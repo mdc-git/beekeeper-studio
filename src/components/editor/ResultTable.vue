@@ -154,7 +154,7 @@
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
         var fs = require("fs")
-            const writer = fs.createWriteStream(`/home/sudoer/Downloads/exports/${title}-${dateString}.${format}`);
+        /**const writer = fs.createWriteStream(`/home/sudoer/Downloads/exports/${title}-${dateString}.${format}`);
         
         for (let i =0; i< this.result.rows.length; i++) {
           const row = this.result.rows[i]
@@ -183,7 +183,9 @@
           writer.write(values)
         }
         
-         writer.close()
+         writer.close()**/
+         var JSONStream = require('JSONStream');
+         fs.createReadStream('/tmp/out').pipe(JSONStream.parse()).pipe(fs.createWriteStream(`/home/sudoer/Downloads/exports/${title}-${dateString}.${format}`));
       },
       clipboard() {
         this.tabulator.copyToClipboard("table", true)

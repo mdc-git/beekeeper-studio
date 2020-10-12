@@ -382,6 +382,30 @@
           this.error = 'No query to run'
         }
       },
+      async serializeQuery(query) {
+        const runQuery = (connection) => new Promise((resolve) => {
+            //var stringify = require('csv-stringify');
+
+            //var stringifier = stringify()
+            
+            
+            var JSONStream = require('JSONStream');
+            
+            const cache = '/tmp/out'
+            var fs = require("fs")
+            const writer = fs.createWriteStream(cache).on('pipe', function () {
+                console.log('seomthing is being piped in.');
+            
+            }).on('finish', function(){ 
+              resolve(JSON.parse(fs.readFileSync('/tmp/out').toString()))
+              console.log('file downloaded to ');
+            });
+            
+            connection.query(query).stream().pipe(JSONStream.stringify()).pipe(writer)
+            
+          });
+          return await this.connection.database.connection.runWithConnection(runQuery)
+      },
       async submitQuery(rawQuery, skipModal) {
         this.running = true
         this.queryForExecution = rawQuery
@@ -399,7 +423,29 @@
 
           this.runningQuery = this.connection.query(query)
           const queryStartTime = +new Date()
-          const results = Object.freeze(await this.runningQuery.execute())
+          //const results = Object.freeze(await this.runningQuery.execute())
+
+          const rows = await this.serializeQuery(query)
+          const fields = Object.keys(rows[0]).map(col => {
+              return {name:`${col}`}
+          });
+
+          console.log(fields)
+          console.log(rows)
+          
+          
+          const results = [
+            {
+              command: 'SELECT',
+              fields: fields,
+              rows: rows,
+              rowCount: rows.length
+
+            }
+          ]
+
+          console.log(results)
+
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
