@@ -82,8 +82,14 @@
     },
     async mounted() {
       this.tabulator = new Tabulator(this.$refs.tabulator, {
-        data: this.tableData, //link data to table
-        reactiveData: true,
+        ajaxURL: "http://fake",
+        ajaxSorting: true,
+        ajaxFiltering: true,
+        pagination: "remote",
+        paginationSize: this.limit,
+        ajaxRequestFunc: this.dataFetch,
+
+        reactiveData: false,
         virtualDomHoz: true,
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
@@ -99,13 +105,85 @@
       });
     },
     methods: {
+      dataFetch(url,config,params) {
+      
+      const result = new Promise((resolve, reject) => {
+        (async () => {
+          try {
+            const page = params?.page ?? 1
+            const offset = (page-1) * 1000
+            const end = Math.min(offset + 1000,this.result.rows.length)
+          
+            let rows = [];
+
+            if (params.sorters[0]) {
+              const sortcolumn = params?.sorters[0]?.field
+              if (!this.sortcolumn || sortcolumn !== this.sortcolumn) {
+                this.result.rows = _.sortBy( this.result.rows, sortcolumn )
+                this.sortcolumn = sortcolumn
+              }
+              if (this.page === page || !this.page) {
+                this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
+                this.result.rows.reverse()
+              }
+            }
+            
+            this.page = page;
+
+            for (let i = offset; i < end; i++) {
+              rows.push(this.result.rows[i])
+            }
+
+            const data = this.dataToTableData({rows:rows}, this.tableColumns);
+            resolve({
+              last_page: Math.ceil(this.result.rows.length/1000),
+              data,
+            })
+          } catch (error) {
+            reject();
+            throw error;
+          }
+        })();
+      });
+      return result;
+    },
       cellClick(e, cell) {
         this.selectChildren(cell.getElement())
       },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
+        var fs = require("fs")
+            const writer = fs.createWriteStream(`/home/sudoer/Downloads/exports/${title}-${dateString}.${format}`);
+        
+        for (let i =0; i< this.result.rows.length; i++) {
+          const row = this.result.rows[i]
+          var item = [];
+          Object.values(row).forEach((col) => {
+            if(col){
+              switch(typeof col){
+                case "object":
+                col.value = JSON.stringify(col);
+                break;
+
+                case "undefined":
+                case "null":
+                col = "";
+                break;
+              }
+
+              item.push('"' + String(col).split('"').join('""') + '"');
+            }
+            
+          });
+
+          let values = item.join(',')
+          values = values + '\n';
+          //console.log(values)
+          writer.write(values)
+        }
+        
+         writer.close()
       },
       clipboard() {
         this.tabulator.copyToClipboard("table", true)

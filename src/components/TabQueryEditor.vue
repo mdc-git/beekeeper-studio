@@ -399,7 +399,7 @@
 
           this.runningQuery = this.connection.query(query)
           const queryStartTime = +new Date()
-          const results = await this.runningQuery.execute()
+          const results = Object.freeze(await this.runningQuery.execute())
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
@@ -408,11 +408,7 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
-              result.truncated = true
-              result.truncatedRowCount = this.$config.maxResults
-            }
+            
           })
           this.results = results
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
