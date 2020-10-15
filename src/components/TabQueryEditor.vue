@@ -478,23 +478,16 @@ export default {
       }
     },
     async parseQuery() {
-      
-
       // get total result count
       let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
-      
-      
 
       // query meta information
       this.meta = {
         // total result count
         count: countQuery[0]?.rows[0]["count"],
-        
       };
-      
-    
-      
+
       /**
           {
             "with": null,
@@ -535,9 +528,9 @@ export default {
         // get query meta information
         await this.parseQuery(query);
         // pagesize
-        let limit = this.limit
+        let limit = this.limit;
         // original offset
-        let offset = 0
+        let offset = 0;
         // get first page
         const sql = `SELECT * FROM ( ${this.query.text}  ) beekeper_init LIMIT ${limit} OFFSET ${offset}`;
         this.runningQuery = this.connection.query(sql);
