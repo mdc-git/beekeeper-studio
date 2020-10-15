@@ -14,6 +14,8 @@
 </template>
 
 <script type="text/javascript">
+
+
 import Tabulator from "tabulator-tables";
 import Converter from "../../mixins/data_converter";
 import Mutators from "../../mixins/data_mutators";
@@ -176,11 +178,16 @@ export default {
       this.selectChildren(cell.getElement());
     },
     async download(format) {
-        
+        const {app} = require('electron').remote;
+
+
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        const outfile = app.getPath('temp') + `/${title}-${dateString}.${format}`
+        console.log(outfile)
+
         var fs = require("fs")
-            const writer = fs.createWriteStream(`./downloads/${title}-${dateString}.${format}`);
+            const writer = fs.createWriteStream(outfile);
         writer.on('error',function(err){
           console.log(err)
         })
@@ -243,7 +250,7 @@ export default {
 
           const handler = function () {
           fs.unlink(`./public/${title}-${dateString}.${format}`,function(){
-            fs.unlink(`./downloads/${title}-${dateString}.${format}`,function(){
+            fs.unlink(outfile,function(){
               window.removeEventListener('focus', handler, false )
             })
           })
@@ -251,7 +258,7 @@ export default {
         window.addEventListener('focus', handler, false )
         
         writer.on("finish",function() {
-            fs.linkSync(`./downloads/${title}-${dateString}.${format}`,`./public/${title}-${dateString}.${format}`)
+            fs.linkSync(outfile,`./public/${title}-${dateString}.${format}`)
             window.location = `/${title}-${dateString}.${format}`
         })
         
