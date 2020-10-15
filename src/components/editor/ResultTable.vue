@@ -263,6 +263,10 @@ export default {
           });
 
           
+        const self = this
+        writer.on("finish",function() {
+            self.$noty.info('Download finished.<br>Saved file to:<br>' + file.filePath)
+        })
         
         
 
