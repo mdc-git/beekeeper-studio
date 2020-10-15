@@ -358,6 +358,7 @@ export default {
       if (!this.currentQueryPosition) {
         return;
       }
+      
       const { from, to } = this.currentQueryPosition;
 
       const editorText = this.editor.getValue();
