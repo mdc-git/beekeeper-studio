@@ -200,14 +200,8 @@ export default {
           if (err) throw err;
           console.log("Connected!");
         });
-        
-
-        con.query(this.query.text).stream()
-          .pipe(new stream.Transform({
-            objectMode: true,
-            transform: function (row, encoding, callback) {
-              // Do something with the row of data
-              var item = [];
+        const tranformRow = function(row) {
+          var item = [];
               Object.values(row).forEach((col) => {
                 if(col){
                   switch(typeof col){
@@ -225,7 +219,20 @@ export default {
               });
               let values = item.join(',')
               values = values + '\n';
-              writer.write(values)
+              return values
+        }
+        let headerWritten = false
+        con.query(this.query.text).stream()
+          .pipe(new stream.Transform({
+            objectMode: true,
+            transform: function (row, encoding, callback) {
+              // Do something with the row of data
+              if(!headerWritten) {
+                writer.write(tranformRow(Object.keys(row)))
+                headerWritten = true
+              }
+              
+              writer.write(tranformRow(row))
               callback();
             }
           }))
