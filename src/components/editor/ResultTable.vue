@@ -178,20 +178,34 @@ export default {
       this.selectChildren(cell.getElement());
     },
     async download(format) {
-        const {app} = require('electron').remote;
+        
 
 
+        const { app, dialog } = require('electron').remote;
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        const outfile = app.getPath('temp') + `/${title}-${dateString}.${format}`
-        console.log(outfile)
+        const options = {
+          title: "Save file",
+          defaultPath : app.getPath('downloads') + `/${title}-${dateString}.${format}`,
+          buttonLabel : "Save",
+
+          filters :[
+            {name: 'txt', extensions: ['txt',]},
+            {name: 'All Files', extensions: ['*']}
+           ]
+        }
+
+        const file = await dialog.showSaveDialog( options)
+
+
+
+        
 
         var fs = require("fs")
-            const writer = fs.createWriteStream(outfile);
+            const writer = fs.createWriteStream(file.filePath);
         writer.on('error',function(err){
           console.log(err)
         })
-        console.log(this.connection)
         var mysql = require('mysql2');
         const stream = require('stream');
         console.log(this.connection.server)
@@ -248,19 +262,7 @@ export default {
             writer.close()
           });
 
-          const handler = function () {
-          fs.unlink(`./public/${title}-${dateString}.${format}`,function(){
-            fs.unlink(outfile,function(){
-              window.removeEventListener('focus', handler, false )
-            })
-          })
-        }
-        window.addEventListener('focus', handler, false )
-        
-        writer.on("finish",function() {
-            fs.linkSync(outfile,`./public/${title}-${dateString}.${format}`)
-            window.location = `/${title}-${dateString}.${format}`
-        })
+          
         
         
 
