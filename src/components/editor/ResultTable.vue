@@ -184,33 +184,57 @@ export default {
         writer.on('error',function(err){
           console.log(err)
         })
+        console.log(this.connection)
+        var mysql = require('mysql2');
+        const stream = require('stream');
+        console.log(this.connection.server)
+        var con = mysql.createConnection({
+          host: this.connection.server.config.host,
+          user: this.connection.server.config.user,
+          password: this.connection.server.config.password,
+          port: this.connection.server.config.port,
+          database: this.connection.database.database
+        })
 
-        const query = this.connection.query(this.query.text);
-        const response = await query.execute();
-        for (let i =0; i< response[0].rows.length; i++) {
-          const row = response[0].rows[i]
-          var item = [];
-          Object.values(row).forEach((col) => {
-            if(col){
-              switch(typeof col){
-                case "object":
-                col.value = JSON.stringify(col);
-                break;
-                case "undefined":
-                case "null":
-                col = "";
-                break;
-              }
-              item.push('"' + String(col).split('"').join('""') + '"');
+        con.connect(function(err) {
+          if (err) throw err;
+          console.log("Connected!");
+        });
+        
+
+        con.query(this.query.text).stream()
+          .pipe(new stream.Transform({
+            objectMode: true,
+            transform: function (row, encoding, callback) {
+              // Do something with the row of data
+              var item = [];
+              Object.values(row).forEach((col) => {
+                if(col){
+                  switch(typeof col){
+                    case "object":
+                    col = JSON.stringify(col);
+                    break;
+                    case "undefined":
+                    case "null":
+                    col = "";
+                    break;
+                  }
+                  item.push('"' + String(col).split('"').join('""') + '"');
+                }
+                
+              });
+              let values = item.join(',')
+              values = values + '\n';
+              writer.write(values)
+              callback();
             }
-            
+          }))
+          .on('finish', function() {
+            con.end();
+            writer.close()
           });
-          let values = item.join(',')
-          values = values + '\n';
-          //console.log(values)
-          writer.write(values)
-        }
-        const handler = function () {
+
+          const handler = function () {
           fs.unlink(`./public/${title}-${dateString}.${format}`,function(){
             fs.unlink(`./downloads/${title}-${dateString}.${format}`,function(){
               window.removeEventListener('focus', handler, false )
@@ -223,7 +247,8 @@ export default {
             fs.linkSync(`./downloads/${title}-${dateString}.${format}`,`./public/${title}-${dateString}.${format}`)
             window.location = `/${title}-${dateString}.${format}`
         })
-        writer.close()
+        
+        
 
     },
     clipboard() {
