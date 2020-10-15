@@ -180,14 +180,13 @@ export default {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
         var fs = require("fs")
-            const writer = fs.createWriteStream(`./public/${title}-${dateString}.${format}`);
-        
+            const writer = fs.createWriteStream(`./downloads/${title}-${dateString}.${format}`);
+        writer.on('error',function(err){
+          console.log(err)
+        })
 
-        let sql = this.query.text;
-        console.log("->>>>", sql);
-        const query = this.connection.query(sql);
+        const query = this.connection.query(this.query.text);
         const response = await query.execute();
-
         for (let i =0; i< response[0].rows.length; i++) {
           const row = response[0].rows[i]
           var item = [];
@@ -213,20 +212,19 @@ export default {
         }
         const handler = function () {
           fs.unlink(`./public/${title}-${dateString}.${format}`,function(){
-            window.removeEventListener('focus', handler, false )
+            fs.unlink(`./downloads/${title}-${dateString}.${format}`,function(){
+              window.removeEventListener('focus', handler, false )
+            })
           })
         }
         window.addEventListener('focus', handler, false )
         
         writer.on("finish",function() {
+            fs.linkSync(`./downloads/${title}-${dateString}.${format}`,`./public/${title}-${dateString}.${format}`)
             window.location = `/${title}-${dateString}.${format}`
         })
         writer.close()
 
-        
-       
-        
-        
     },
     clipboard() {
       this.tabulator.copyToClipboard("table", true);
