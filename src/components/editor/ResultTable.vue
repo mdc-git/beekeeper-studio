@@ -20,8 +20,8 @@ import Mutators from "../../mixins/data_mutators";
 import Statusbar from "../common/StatusBar";
 import _ from "lodash";
 import dateFormat from "dateformat";
-import Papa from "papaparse";
-import FileSaver from "file-saver";
+//import Papa from "papaparse";
+//import FileSaver from "file-saver";
 
 export default {
   components: { Statusbar },
@@ -175,26 +175,58 @@ export default {
     cellClick(e, cell) {
       this.selectChildren(cell.getElement());
     },
-    async download() {
-      this.tabulator.modules.ajax.showLoader();
-      this.tabulator.blockRedraw();
-      
-      const response = await this.connection.query(this.query.text).execute();
-      Object.freeze(response);
+    async download(format) {
+        
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
+        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        var fs = require("fs")
+            const writer = fs.createWriteStream(`./public/${title}-${dateString}.${format}`);
+        
 
-      const dataString = Papa.unparse(response[0].rows);
-      Object.freeze(dataString);
-      const dateString = dateFormat(new Date(), "yyyy-mm-dd_hMMss");
-      const title = this.query.title
-        ? _.snakeCase(this.query.title)
-        : "query_results";
-      FileSaver.saveAs(
-        new Blob([dataString], { type: "text/csv;charset=utf-8" }),
-        `${title}-${dateString}.csv`
-      );
+        let sql = this.query.text;
+        console.log("->>>>", sql);
+        const query = this.connection.query(sql);
+        const response = await query.execute();
 
-      this.tabulator.modules.ajax.hideLoader();
-      this.tabulator.restoreRedraw();
+        for (let i =0; i< response[0].rows.length; i++) {
+          const row = response[0].rows[i]
+          var item = [];
+          Object.values(row).forEach((col) => {
+            if(col){
+              switch(typeof col){
+                case "object":
+                col.value = JSON.stringify(col);
+                break;
+                case "undefined":
+                case "null":
+                col = "";
+                break;
+              }
+              item.push('"' + String(col).split('"').join('""') + '"');
+            }
+            
+          });
+          let values = item.join(',')
+          values = values + '\n';
+          //console.log(values)
+          writer.write(values)
+        }
+        const handler = function () {
+          fs.unlink(`./public/${title}-${dateString}.${format}`,function(){
+            window.removeEventListener('focus', handler, false )
+          })
+        }
+        window.addEventListener('focus', handler, false )
+        
+        writer.on("finish",function() {
+            window.location = `/${title}-${dateString}.${format}`
+        })
+        writer.close()
+
+        
+       
+        
+        
     },
     clipboard() {
       this.tabulator.copyToClipboard("table", true);
