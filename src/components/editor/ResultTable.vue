@@ -219,7 +219,7 @@ export default {
       const tranformRow = function (row) {
         var item = [];
         Object.values(row).forEach((col) => {
-          if (col) {
+          
             switch (typeof col) {
               case "object":
                 col = JSON.stringify(col);
@@ -230,7 +230,7 @@ export default {
                 break;
             }
             item.push('"' + String(col).split('"').join('""') + '"');
-          }
+          
         });
         let values = item.join(",");
         values = values + "\n";
