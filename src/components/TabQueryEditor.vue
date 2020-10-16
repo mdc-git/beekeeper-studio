@@ -62,6 +62,7 @@
         :query="query"
         :connection="tab.connection"
         :meta="this.meta"
+        @executeTimeUpdate=executeTimeUpdate
       ></result-table>
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
@@ -86,6 +87,7 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :rowCount="this.meta.count"
         @download="download"
         @clipboard="clipboard"
         :executeTime="executeTime"
@@ -275,7 +277,7 @@ export default {
       };
     },
     rowCount() {
-      return this.result && this.result.rows ? this.result.rows.length : 0;
+      return this.meta && this.meta.count ? this.meta.count : 0;
     },
     hasText() {
       return this.query.text && this.query.text.replace(/\s+/, "").length > 0;
@@ -358,7 +360,7 @@ export default {
       if (!this.currentQueryPosition) {
         return;
       }
-      
+
       const { from, to } = this.currentQueryPosition;
 
       const editorText = this.editor.getValue();
@@ -408,6 +410,9 @@ export default {
     },
   },
   methods: {
+    executeTimeUpdate(executeTime) {
+      this.executeTime = executeTime
+    },
     async cancelQuery() {
       if (this.running && this.runningQuery) {
         this.running = false;
@@ -535,15 +540,12 @@ export default {
         // get first page
         const sql = `SELECT * FROM ( ${this.query.text}  ) beekeper_init LIMIT ${limit} OFFSET ${offset}`;
         this.runningQuery = this.connection.query(sql);
-        const queryStartTime = +new Date();
-        // freeze result, make "un"reactive
-        const results = Object.freeze(await this.runningQuery.execute());
-        const queryEndTime = +new Date();
-        this.executeTime = queryEndTime - queryStartTime;
-        results.forEach((result) => {
+        
+        /**results.forEach((result) => {
           result.rowCount = result.rowCount || 0;
         });
-        this.results = results;
+        this.results = results;**/
+        this.results = [{}]
         this.$store.dispatch("logQuery", {
           text: query,
           rowCount: this.meta.count,

@@ -20,6 +20,10 @@ import Mutators from "../../mixins/data_mutators";
 import Statusbar from "../common/StatusBar";
 import _ from "lodash";
 import dateFormat from "dateformat";
+import fs from "fs";
+const { app, dialog } = require("electron").remote;
+const mysql = require("mysql2");
+const stream = require("stream");
 //import Papa from "papaparse";
 //import FileSaver from "file-saver";
 
@@ -139,11 +143,19 @@ export default {
               limit = this.limit;
               offset = offset = (page - 1) * records_per_page;
             }
+            const queryStartTime = +new Date();
+            // freeze result, make "un"reactive
+            //const results = Object.freeze(await this.runningQuery.execute());
+            
             let sql = `SELECT * FROM ( SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} ) beekeper_limit LIMIT ${limit} OFFSET ${offset}`;
-            console.log("->>>>", sql);
+            
             const query = this.connection.query(sql);
             const response = await query.execute();
             Object.freeze(response);
+            const queryEndTime = +new Date();
+            const executeTime = queryEndTime - queryStartTime;
+            this.$emit('executeTimeUpdate',executeTime)
+
             const fields = response[0].fields;
             const columnWidth = 125;
             const columns = fields.map((column) => {
@@ -176,8 +188,25 @@ export default {
     cellClick(e, cell) {
       this.selectChildren(cell.getElement());
     },
+    transformRow(row) {
+      let item = [];
+      Object.values(row).forEach((col) => {
+        switch (typeof col) {
+          case "object":
+            col = JSON.stringify(col);
+            break;
+          case "undefined":
+          case "null":
+            col = "(NULL)";
+            break;
+        }
+        item.push('"' + String(col).split('"').join('""') + '"');
+      });
+      let values = item.join(",");
+      values = values + "\n";
+      return values;
+    },
     async download(format) {
-      const { app, dialog } = require("electron").remote;
       const dateString = dateFormat(new Date(), "yyyy-mm-dd_hMMss");
       const title = this.query.title
         ? _.snakeCase(this.query.title)
@@ -195,76 +224,53 @@ export default {
       };
 
       const file = await dialog.showSaveDialog(options);
-      if(file.filePath==="") return
-      var fs = require("fs");
-      const writer = fs.createWriteStream(file.filePath);
-      writer.on("error", function (err) {
-        console.log(err);
-      });
-      var mysql = require("mysql2");
-      const stream = require("stream");
-      console.log(this.connection.server);
-      var con = mysql.createConnection({
+      if (file.filePath === "") return;
+
+      const writer = fs
+        .createWriteStream(file.filePath)
+        .on("error", function (err) {
+          throw err;
+        });
+
+      const connection = mysql.createConnection({
         host: this.connection.server.config.host,
         user: this.connection.server.config.user,
         password: this.connection.server.config.password,
         port: this.connection.server.config.port,
         database: this.connection.database.database,
       });
-
-      con.connect(function (err) {
+      connection.connect(function (err) {
         if (err) throw err;
-        console.log("Connected!");
       });
-      const tranformRow = function (row) {
-        var item = [];
-        Object.values(row).forEach((col) => {
-          
-            switch (typeof col) {
-              case "object":
-                col = JSON.stringify(col);
-                break;
-              case "undefined":
-              case "null":
-                col = "(NULL)";
-                break;
-            }
-            item.push('"' + String(col).split('"').join('""') + '"');
-          
-        });
-        let values = item.join(",");
-        values = values + "\n";
-        return values;
-      };
+
+      const transformRow = this.transformRow;
       let headerWritten = false;
-      con
+      const csvTransform = new stream.Transform({
+        objectMode: true,
+        transform: function (row, encoding, callback) {
+          // Do something with the row of data
+          if (!headerWritten) {
+            writer.write(transformRow(Object.keys(row)));
+            headerWritten = true;
+          }
+
+          writer.write(transformRow(row));
+          callback();
+        },
+      });
+
+      connection
         .query(this.query.text)
         .stream()
-        .pipe(
-          new stream.Transform({
-            objectMode: true,
-            transform: function (row, encoding, callback) {
-              // Do something with the row of data
-              if (!headerWritten) {
-                writer.write(tranformRow(Object.keys(row)));
-                headerWritten = true;
-              }
-
-              writer.write(tranformRow(row));
-              callback();
-            },
-          })
-        )
+        .pipe(csvTransform)
         .on("finish", function () {
-          con.end();
+          connection.end();
           writer.close();
         });
 
-      const self = this;
+      const noty = this.$noty;
       writer.on("finish", function () {
-        self.$noty.info(
-          "Download finished.<br>Saved file to:<br>" + file.filePath
-        );
+        noty.info("Download finished.<br>Saved file to:<br>" + file.filePath);
       });
     },
     clipboard() {

@@ -95,13 +95,11 @@ import humanizeDuration from "humanize-duration";
 import Statusbar from "../common/StatusBar";
 
 export default {
-  props: ["results", "running", "value", "executeTime", "meta"],
+  props: ["results", "running", "value", "executeTime", "rowCount"],
   components: { Statusbar },
 
   computed: {
-    rowCount() {
-      return (this.meta && this.meta.count) || 0;
-    },
+    
     result() {
       return this.results[this.value];
     },
