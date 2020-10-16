@@ -147,7 +147,7 @@ export default {
             // freeze result, make "un"reactive
             //const results = Object.freeze(await this.runningQuery.execute());
             
-            let sql = `SELECT * FROM ( SELECT * FROM ( ${this.query.text} ) beekeeper_sort ${orderBy2} ) beekeper_limit LIMIT ${limit} OFFSET ${offset}`;
+            let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
             
             const query = this.connection.query(sql);
             const response = await query.execute();
