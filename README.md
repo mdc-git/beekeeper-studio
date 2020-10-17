@@ -63,7 +63,7 @@ Pros:
 
 Cons:
 - Need to be careful with original query syntax 
-- ex: what if the original query is `SELECT * FROM bigtable LIMIT 10` <- applying another limit with pagination will result in an syntax error
+- ex: what if the original query is `SELECT * FROM bigtable LIMIT 10` <- applying another limit for pagination will result in an syntax error
 - Would have to parse the query to get this right
 - Parsers seem immature
 - Download has to be rewritten
@@ -73,7 +73,7 @@ Cons:
 - offload work to the server
 - don't touch original query
 - wrap queries
-- why wrappers? distinct does funny things, FOUND_ROWS is getting deprecated and we want to circumwent a query parser
+- why wrappers? distinct does funny things, FOUND_ROWS is getting deprecated and we want to circumvent a query parser
 - get count of results first: wrap into count(*)
 `SELECT count(*) count FROM ( originalquery ) countres`
 - apply pagination / ordering
