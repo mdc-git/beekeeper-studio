@@ -92,10 +92,8 @@ Pros:
 Cons:
 - **Can still have pitfalls with the syntax (didn't test much apart from simple selects)** especially not inserts, other dbs
 - Server load because of wrapped queries
-- Growing latency with growing table size
 - Download has to be rewritten
-- **Is somewhat inefficient on the server side, induces latency**
-- Download has to be rewritten
+- **Is inefficient on the server side, induces latency with growing table size**
 
 #### Sidenotes:
 
