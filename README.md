@@ -3,8 +3,7 @@
 #### Problem description: 
 https://github.com/beekeeper-studio/beekeeper-studio/issues/263
 
-Basically running 3 `select * from bigtable` queries in different QueryTabs crashes the application running out of memory. I was disappointed.
-I tried to fix my particular problem: MySQL and CSV. BROKE other stuff by accident and force, because I didn't really care about other databases/formats/INSERTS/UPDATES and so on.
+Basically running 3 `select * from bigtable` queries in different QueryTabs crashes the application running out of memory. I was disappointed, because this looks like a really great open source project and I'm sick of searching for Sequel Pro alternatives on Linux and coming up with phpmyadmin/bloated DBA tools/Crashbench/overly complex UIs. Cudos to the maintainers! I tried to fix my particular problem: MySQL and CSV. BROKE other stuff by accident and force, because I didn't really care about other databases/formats/INSERTS/UPDATES and so on.
 
 #### Solution proposal 0.0: Apply a 50000 record limit to all queries (maintainers current solution)
 
