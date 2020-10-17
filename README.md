@@ -6,8 +6,11 @@ https://github.com/beekeeper-studio/beekeeper-studio/issues/263
 Basically running 3 `select * from bigtable` queries in different QueryTabs crashes the application running out of memory. I was disappointed.
 I tried to fix my particular problem: MySQL and CSV. BROKE other stuff by accident and force, because I didn't really care about other databases/formats/INSERTS/UPDATES and so on.
 
+#### Solution proposal 0.0: Apply a 50000 record limit to all queries (maintainers current solution)
 
-#### Solution proposal 0: File based storage (maintainers solution)
+This one has only cons. Worst part is the application crashing nonetheless.
+
+#### Solution proposal 0.1: File based storage (maintainers future solution)
 
 - download the results to a File
 - page through file
@@ -31,7 +34,7 @@ Pros:
 - Seems to work for a while
 
 Cons:
-- Crashes nevertheless
+- Crashes nonetheless
 - Download has to be rewritten
 
 #### Solution proposal 2: Fake remote pagination over the query results
