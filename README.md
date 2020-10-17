@@ -1,114 +1,99 @@
-**Attention Existing MacOS, Windows, and AppImage users:**
+**Forked of https://github.com/beekeeper-studio/beekeeper-studio**
 
-- Automatic update functionality was broken before version 1.7.5. Please update manually from the releases section on the right. From 1.7.5 the app will automatically update (like it was supposed to).
+#### Problem description: 
+https://github.com/beekeeper-studio/beekeeper-studio/issues/263
 
-# Beekeeper Studio
-
-Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
-
-Beekeeper Studio is MIT licensed so it is free (libre) and free (gratis). 
-
-Download now [from our website](https://beekeeperstudio.io)
-
-Love Beekeeper Studio and want to help, but can't write code? [We have some ideas for you](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
-
-## Features
-
-Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it 🥰
-
-- Autocomplete SQL query editor with syntax highlighting
-- Tabbed interface, so you can multitask
-- Sort and filter table data to find just what you need
-- Sensible keyboard-shortcuts
-- Save queries for later
-- Query run-history, so you can find that one query you got working 3 days ago
-- Default dark theme
-
-One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created it!
-
-![Beekeeper Studio Screenshot](https://www.beekeeperstudio.io/assets/img/screenshots/main-dark-9e3099be326f5ba8f2389545e6811e9dda80ae842f210450385226f7cf3cc817.png)
-
-Beekeeper Studio supports connecting to the following databases:
-
-- SQLite
-- MySQL
-- MariaDB
-- Postgres
-- CockroachDB
-- SQL Server
-- Amazon Redshift
-
-## Installation
-
-Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
-
-## Contributing to Beekeeper Studio
-
-We love *any* community engagement. Even if you're complaining because you don't like something about the app!
-
-Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
-
-### Starting the Dev version of Beekeeper Studio
-
-Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
-
-```bash
-# First: Install NodeJS 12+, NPM, and Yarn
-# ...
-
-# 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
-# 2. Check out your fork:
-git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
-cd beekeeper-studio/
-yarn install # installs dependencies
-
-# Now you can start the app:
-yarn run electron:serve ## the app will now start
-```
-
-### Where to make changes?
-
-Beekeeper Studio has two entry points:
-- `background.js` - this is the electron-side code that controls native things like showing windows.
-- `main.js` - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs from `App.vue` to find the screen you need.
-
-**Generally we have two 'screens':**
-- ConnectionInterface - connecting to a DB
-- CoreInterface - interacting with a database
-
-### How to submit a change?
-
-- Push your changes to your repository and open a Pull Request from our github page (this page)
-- Make sure to write some notes about what your change does! A gif is always welcome for visual changes.
-
-## Maintainer notes (casual readers can ignore this stuff)
+Basically running 3 select * from bigtable queries in different QueryTabs crashes the application running out of memory. I was disappointed.
+I tried to fix my particular problem: MySQL and CSV. BROKE other stuff by accident and force, because I didn't really care about other databases/formats/INSERTS/UPDATES and so on.
 
 
-### Release Process 
+#### Solution proposal 0: File based storage (maintainers solution)
 
-1. Up the version number in package.json
-2. Replace `build/release-notes.md` with the latest release notes. Follow the format that is there.
-  - run `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` to find PRs merged
-2. Commit
-3. Push to master
-4. Create a tag `git tag v<version>`. It must start with a 'v'
-5. `git push origin <tagname>`
-  - Now wait for the build/publish action to complete on Github
-6. Push the new release live
-  - Go to the new 'draft' release on the releases tab of github, edit the notes, publish
-  - Log into snapcraft.io, drag the uploaded release into the 'stable' channel for each architecture.
+- download the results to a File
+- page through file
 
-This should also publish the latest docs
+Pros:
+- Easy
+- Downloadable straight away
 
-Post Release:
-1. Copy release notes to a blog post, post on website
-2. Tweet link
-3. Share on LinkedIn
-4. Send to mailing list on SendInBlue
+Cons:
+- Can't sort columns without redownload
+- bigtable results in 400mb per query alternation
+- downloading takes ages
 
 
-## Big Thanks
+#### Solution proposal 1: Local pagination in Tabulator
 
-Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
+- add pagination: "local" to Tabulator 
 
+Pros: 
+- Easy
+- Seems to work for a while
+Cons:
+- Crashes nevertheless
+- Download has to be rewritten
 
+#### Solution proposal 2: Fake remote pagination over the query results
+
+- hold query result in memory
+- page through array columns
+- display only about 1000 rows simuntaneously
+
+Pros:
+- Easy enough
+- Works until multiple tabs are opened
+Cons:
+- All results are still in memory
+- Crashes with multiple tabs
+- Download has to be rewritten
+
+#### Solution proposal 3: Real remote pagination
+
+- rewrite the query and apply limit and offset
+- send query to server
+
+Pros:
+- Medium effort
+- Runs pretty stable
+- Memory gets released
+- Blazing fast
+- Works with 800000 rows for me
+
+Cons:
+- Need to be careful with original query syntax 
+- ex: what if the original query is SELECT * FROM bigtable LIMIT 10 <- applying another limit with pagination will result in an syntax error
+- Would have to parse the query to get this right
+- Parsers seem immature
+- Download has to be rewritten
+
+#### Solution proposal 4: Real remote pagination with wrapped queries (that's what's in the package)
+
+- offload work to the server
+- don't touch original query
+- wrap queries
+- why wrappers? distinct does funny things, FOUND_ROWS is getting deprecated and we want to circumwent a query parser
+- get count of results first: wrap into count(*)
+SELECT count(*) FROM ( originalquery ) countres
+- apply pagination / ordering
+SELECT * FROM ( originalquery ) limitres ORDER BY order LIMIT limit OFFSET offset
+
+Pros:
+- Offloads work server side
+- Runs pretty stable
+- Memory gets released
+- Medium fast
+- Works with 800000 rows for me
+- Column sorting works quite well
+
+Cons:
+- Can still have pitfalls with the syntax (didn't test much besides simple selects)
+- Server load because of wrapped queries
+- Growing latency with growing table size
+- Download has to be rewritten
+- Is somewhat inefficient on the server side, induces latency
+- Download has to be rewritten
+
+#### Sidenotes:
+
+- To not store all results in memory on download again, I resorted to the original mysql2 package to support streaming the query asynchronously to a FileStreamWriter (sqlectron doesn't support this out of the box afaik). 
+On big tables, this might take some time. You get notified by noty when it's ready meanwhile you can use the interface without being locked out.
