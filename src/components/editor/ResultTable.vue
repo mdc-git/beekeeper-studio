@@ -89,6 +89,7 @@ export default {
       height: this.actualTableHeight,
       nestedFieldSeparator: false,
       cellClick: this.cellClick,
+      rowClick: this.rowClick,
       clipboard: true,
       keybindings: {
         copyToClipboard: false,
@@ -146,15 +147,15 @@ export default {
             const queryStartTime = +new Date();
             // freeze result, make "un"reactive
             //const results = Object.freeze(await this.runningQuery.execute());
-            
+
             let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
-            
+
             const query = this.connection.query(sql);
             const response = await query.execute();
             Object.freeze(response);
             const queryEndTime = +new Date();
             const executeTime = queryEndTime - queryStartTime;
-            this.$emit('executeTimeUpdate',executeTime)
+            this.$emit("executeTimeUpdate", executeTime);
 
             const fields = response[0].fields;
             const columnWidth = 125;
@@ -184,6 +185,14 @@ export default {
         })();
       });
       return result;
+    },
+    rowClick: function (e, row) {
+      const data = row._row.data;
+      const obj = {};
+      Object.keys(data).forEach((key) => {
+        obj[key] = data[key];
+      });
+      this.$parent.$parent.$emit("selectedRow", obj);
     },
     cellClick(e, cell) {
       this.selectChildren(cell.getElement());
