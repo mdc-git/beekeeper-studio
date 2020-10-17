@@ -19,7 +19,7 @@
       <!-- Columneditor -->
       <div class="wrapper" ref="columneditor" v-if="rowCount > 0" style="height: 100%; overflow-y: scroll; padding: 10px; padding-top: 40px">
         <div v-for="(value, propertyName) in activerow" :key="propertyName">
-          <label :for="propertyName"><strong>{{ propertyName }}</strong></label>
+          <label :for="'columneditor_' + propertyName"><strong>{{ propertyName }}</strong></label>
           <ResizeAuto>
             <template>
               <textarea
@@ -97,7 +97,6 @@ export default {
   methods: {
     selectedRow(obj) {
       this.activerow = Object.freeze(obj);
-      console.log(obj);
     },
     databaseSelected(database) {
       this.$emit("databaseSelected", database);
