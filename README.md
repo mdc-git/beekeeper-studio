@@ -21,7 +21,7 @@ Pros:
 Cons:
 - Can't sort columns without redownload
 - bigtable results in 400mb per query alternation
-- downloading takes ages
+- **downloading takes ages**
 
 
 #### Solution proposal 1: Local pagination in Tabulator
@@ -33,7 +33,7 @@ Pros:
 - Seems to work for a while
 
 Cons:
-- Crashes nonetheless
+- **Crashes nonetheless**
 - Download has to be rewritten
 
 #### Solution proposal 2: Fake remote pagination over the query results
@@ -48,7 +48,7 @@ Pros:
 
 Cons:
 - All results are still in memory
-- Crashes with multiple tabs
+- **Crashes with multiple tabs**
 - Download has to be rewritten
 
 #### Solution proposal 3: Real remote pagination
@@ -60,14 +60,14 @@ Pros:
 - Medium effort
 - Runs pretty stable
 - Memory gets released
-- Blazing fast
+- **Blazing fast**
 - Works with 800000 rows for me
 
 Cons:
 - Need to be careful with original query syntax 
 - ex: what if the original query is `SELECT * FROM bigtable LIMIT 10` <- applying another limit for pagination will result in an syntax error
 - Would have to parse the query to get this right
-- Parsers seem immature
+- **Parsers seem immature**
 - Download has to be rewritten
 
 #### Solution proposal 4: Real remote pagination with wrapped queries (that's what's in the package)
@@ -94,7 +94,7 @@ Cons:
 - Server load because of wrapped queries
 - Growing latency with growing table size
 - Download has to be rewritten
-- Is somewhat inefficient on the server side, induces latency
+- **Is somewhat inefficient on the server side, induces latency**
 - Download has to be rewritten
 
 #### Sidenotes:
