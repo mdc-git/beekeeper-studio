@@ -3,7 +3,7 @@
 #### Problem description: 
 https://github.com/beekeeper-studio/beekeeper-studio/issues/263
 
-Basically running 3 select * from bigtable queries in different QueryTabs crashes the application running out of memory. I was disappointed.
+Basically running 3 `select * from bigtable` queries in different QueryTabs crashes the application running out of memory. I was disappointed.
 I tried to fix my particular problem: MySQL and CSV. BROKE other stuff by accident and force, because I didn't really care about other databases/formats/INSERTS/UPDATES and so on.
 
 
@@ -24,7 +24,7 @@ Cons:
 
 #### Solution proposal 1: Local pagination in Tabulator
 
-- add pagination: "local" to Tabulator 
+- add `pagination: "local"` to Tabulator 
 
 Pros: 
 - Easy
@@ -73,9 +73,9 @@ Cons:
 - wrap queries
 - why wrappers? distinct does funny things, FOUND_ROWS is getting deprecated and we want to circumwent a query parser
 - get count of results first: wrap into count(*)
-SELECT count(*) FROM ( originalquery ) countres
+`SELECT count(*) count FROM ( originalquery ) countres`
 - apply pagination / ordering
-SELECT * FROM ( originalquery ) limitres ORDER BY order LIMIT limit OFFSET offset
+`SELECT * FROM ( originalquery ) limitres ORDER BY order LIMIT limit OFFSET offset`
 
 Pros:
 - Offloads work server side
@@ -86,7 +86,7 @@ Pros:
 - Column sorting works quite well
 
 Cons:
-- Can still have pitfalls with the syntax (didn't test much besides simple selects)
+- Can still have pitfalls with the syntax (didn't test much apart from simple selects)
 - Server load because of wrapped queries
 - Growing latency with growing table size
 - Download has to be rewritten
