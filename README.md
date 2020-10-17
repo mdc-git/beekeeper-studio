@@ -29,6 +29,7 @@ Cons:
 Pros: 
 - Easy
 - Seems to work for a while
+
 Cons:
 - Crashes nevertheless
 - Download has to be rewritten
@@ -42,6 +43,7 @@ Cons:
 Pros:
 - Easy enough
 - Works until multiple tabs are opened
+
 Cons:
 - All results are still in memory
 - Crashes with multiple tabs
