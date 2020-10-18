@@ -137,7 +137,7 @@ export default {
             : records_per_page;
       }
 
-      const result = new Promise((resolve,reject) => {
+      const result = new Promise((resolve, reject) => {
         (async () => {
           try {
             if (orderBy2 !== "") {
@@ -148,12 +148,7 @@ export default {
             // freeze result, make "un"reactive
             //const results = Object.freeze(await this.runningQuery.execute());
 
-            //let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
-            limit = Math.min(this.meta.count,limit)
-            let regex = /(LIMIT) (?!.*\)).*$/im
-            let postfix = ` LIMIT ${limit} OFFSET ${offset}`
-            let sql = this.query.text.replace(regex, '');
-            sql = `SELECT * FROM (${sql} ${postfix}) beekeeper_sort ${orderBy2}`
+            let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
 
             const query = this.connection.query(sql);
             const response = await query.execute();
@@ -184,10 +179,8 @@ export default {
               data,
             });
           } catch (error) {
-            reject(error);
-            this.$emit('setError',error)
-
-            //throw error;
+            reject();
+            throw error;
           }
         })();
       });
