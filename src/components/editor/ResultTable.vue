@@ -149,15 +149,11 @@ export default {
             //const results = Object.freeze(await this.runningQuery.execute());
 
             //let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            limit = Math.min(this.meta.count,limit)
             let regex = /(LIMIT) (?!.*\)).*$/im
             let postfix = ` LIMIT ${limit} OFFSET ${offset}`
-            if (orderBy2 !== "") {
-              regex = /(LIMIT|ORDER BY) (?!.*\)).*$/im
-              postfix = `${orderBy2} LIMIT ${limit} OFFSET ${offset}`
-            }
-
             let sql = this.query.text.replace(regex, '');
-            sql = `${sql} ${postfix}`
+            sql = `SELECT * FROM (${sql} ${postfix}) beekeeper_sort ${orderBy2}`
 
             const query = this.connection.query(sql);
             const response = await query.execute();
