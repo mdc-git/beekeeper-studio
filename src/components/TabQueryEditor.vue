@@ -52,7 +52,12 @@
       </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
+      <div class="message" v-if="error">	      <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
+        <div class="alert alert-danger">	
+          <i class="material-icons">warning</i><span>{{ error }}</span>	
+        </div>	
+      </div>	
+      <progress-bar @cancel="cancelQuery" v-else-if="running"></progress-bar>
       <result-table
         ref="table"
         v-else-if="rowCount > 0"
@@ -63,6 +68,7 @@
         :connection="tab.connection"
         :meta="this.meta"
         @executeTimeUpdate=executeTimeUpdate
+        @setError=setError
       ></result-table>
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
@@ -70,11 +76,7 @@
           ><span>Query Executed Successfully. No Results</span>
         </div>
       </div>
-      <div class="message" v-else-if="error">
-        <div class="alert alert-danger">
-          <i class="material-icons">warning</i><span>{{ error }}</span>
-        </div>
-      </div>
+      
       <div class="message" v-else-if="info">
         <div class="alert alert-info">
           <i class="material-icons">warning</i><span>{{ info }}</span>
@@ -410,6 +412,9 @@ export default {
     },
   },
   methods: {
+    setError(error) {	
+      this.error = error	
+    },
     executeTimeUpdate(executeTime) {
       this.executeTime = executeTime
     },
@@ -522,7 +527,7 @@ export default {
       this.queryForExecution = rawQuery;
       this.results = [];
       this.selectedResult = 0;
-
+      this.error = null
       try {
         if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
           this.$modal.show("parameters-modal");
