@@ -158,12 +158,12 @@ export default {
             this.$emit("executeTimeUpdate", executeTime);
 
             const fields = response[0].fields;
-            //const columnWidth = 125;
+            const columnWidth = 50;
             const columns = fields.map((column) => {
               const result = {
                 title: column.name,
                 field: column.name,
-                //width: columnWidth,
+                minWidth: columnWidth,
                 mutatorData: this.resolveDataMutator(
                   response[0].rows[0][column.name]
                 ),
