@@ -85,7 +85,7 @@ export default {
       paginationElement: this.$refs.paginationArea,
       ajaxRequestFunc: this.dataFetch,
       reactiveData: false,
-      virtualDomHoz: true,
+      //virtualDomHoz: true,
       height: this.actualTableHeight,
       nestedFieldSeparator: false,
       cellClick: this.cellClick,
@@ -158,12 +158,12 @@ export default {
             this.$emit("executeTimeUpdate", executeTime);
 
             const fields = response[0].fields;
-            const columnWidth = 125;
+            //const columnWidth = 125;
             const columns = fields.map((column) => {
               const result = {
                 title: column.name,
                 field: column.name,
-                width: columnWidth,
+                //width: columnWidth,
                 mutatorData: this.resolveDataMutator(
                   response[0].rows[0][column.name]
                 ),
