@@ -172,7 +172,7 @@ export default {
               return result;
             });
 
-            this.tabulator.setColumns(columns);
+            if(!this.tabulator.getColumns().length) this.tabulator.setColumns(columns);
             const data = await this.dataToTableData(response[0], columns);
             resolve({
               last_page: last_page,
