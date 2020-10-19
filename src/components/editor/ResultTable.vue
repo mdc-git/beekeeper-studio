@@ -128,7 +128,7 @@ export default {
         
       } else {
         if (this.meta.orderby) {
-          orderBy2 = `-${this.meta.orderby[1]}`;
+          orderBy2 = `${this.meta.orderby[1]}`;
         }
       }
 
