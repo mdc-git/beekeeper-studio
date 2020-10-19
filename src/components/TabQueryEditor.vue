@@ -52,11 +52,12 @@
       </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <div class="message" v-if="error">	      <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
-        <div class="alert alert-danger">	
-          <i class="material-icons">warning</i><span>{{ error }}</span>	
-        </div>	
-      </div>	
+      <div class="message" v-if="error">
+        <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
+        <div class="alert alert-danger">
+          <i class="material-icons">warning</i><span>{{ error }}</span>
+        </div>
+      </div>
       <progress-bar @cancel="cancelQuery" v-else-if="running"></progress-bar>
       <result-table
         ref="table"
@@ -67,8 +68,8 @@
         :query="query"
         :connection="tab.connection"
         :meta="this.meta"
-        @executeTimeUpdate=executeTimeUpdate
-        @setError=setError
+        @executeTimeUpdate="executeTimeUpdate"
+        @setError="setError"
       ></result-table>
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
@@ -76,7 +77,7 @@
           ><span>Query Executed Successfully. No Results</span>
         </div>
       </div>
-      
+
       <div class="message" v-else-if="info">
         <div class="alert alert-info">
           <i class="material-icons">warning</i><span>{{ info }}</span>
@@ -412,11 +413,11 @@ export default {
     },
   },
   methods: {
-    setError(error) {	
-      this.error = error	
+    setError(error) {
+      this.error = error;
     },
     executeTimeUpdate(executeTime) {
-      this.executeTime = executeTime
+      this.executeTime = executeTime;
     },
     async cancelQuery() {
       if (this.running && this.runningQuery) {
@@ -492,15 +493,20 @@ export default {
       // get total result count
       let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
-      const orderby = /ORDER\s?BY\s?([a-z]+\s?(asc|desc)?)(?!.*\))/im.exec(this.query.text)
-      const limit = /LIMIT\s?([0-9]+)(?!.*\)).*$/im.exec(this.query.text)
+      const orderby = /ORDER\s?BY\s?([a-z]+\s?(asc|desc)?)(?!.*\))/im.exec(
+        this.query.text
+      );
+      const limit = /LIMIT\s?([0-9]+)(?!.*\)).*$/im.exec(this.query.text);
       // query meta information
       this.meta = {
         // total result count
         count: countQuery[0]?.rows[0]["count"],
         limit: limit,
         orderby: orderby,
-        stripped: this.query.text.replace(/ORDER\s?BY\s?([a-z]+\s?(asc|desc)?)(?!.*\))/im,'')
+        stripped: this.query.text.replace(
+          /ORDER\s?BY\s?([a-z]+\s?(asc|desc)?)(?!.*\))/im,
+          ""
+        ),
       };
 
       /**
@@ -531,7 +537,7 @@ export default {
       this.queryForExecution = rawQuery;
       this.results = [];
       this.selectedResult = 0;
-      this.error = null
+      this.error = null;
       try {
         if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
           this.$modal.show("parameters-modal");
@@ -549,12 +555,12 @@ export default {
         // get first page
         const sql = `SELECT * FROM ( ${this.query.text}  ) beekeper_init LIMIT ${limit} OFFSET ${offset}`;
         this.runningQuery = this.connection.query(sql);
-        
+
         /**results.forEach((result) => {
           result.rowCount = result.rowCount || 0;
         });
         this.results = results;**/
-        this.results = [{}]
+        this.results = [{}];
         this.$store.dispatch("logQuery", {
           text: query,
           rowCount: this.meta.count,
