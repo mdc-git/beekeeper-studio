@@ -24,8 +24,6 @@ import fs from "fs";
 const { app, dialog } = require("electron").remote;
 const mysql = require("mysql2");
 const stream = require("stream");
-//import Papa from "papaparse";
-//import FileSaver from "file-saver";
 
 export default {
   components: { Statusbar },
@@ -34,8 +32,6 @@ export default {
     return {
       tabulator: null,
       limit: 1000,
-      togglesort: "asc",
-      orderBy: "",
     };
   },
   props: ["result", "tableHeight", "query", "active", "connection", "meta"],
