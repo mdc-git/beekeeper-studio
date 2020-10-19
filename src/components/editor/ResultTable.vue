@@ -98,8 +98,8 @@ export default {
         columnHeaders: true,
       },
     });
-    Object.freeze(tabulator)
-    this.tabulator = tabulator
+    Object.freeze(tabulator);
+    this.tabulator = tabulator;
   },
   methods: {
     dataFetch(url, config, params) {
@@ -112,62 +112,44 @@ export default {
       // current page
       const page = params?.page ?? 1;
 
-      let limit, offset;
+      let limit = Math.min(
+        records - (page - 1) * records_per_page,
+        records_per_page
+      );
 
-      let orderBy2;
+      let offset = (page - 1) * records_per_page;
 
+      let orderBy2 = "";
+
+      console.log(params.sorters);
       // column sorting
       if (params.sorters[0]) {
-        if (this.page === page || !this.page) {
-          this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
+        orderBy2 = `${params.sorters[0].field} ${params.sorters[0].dir} `;
+      } else {
+        if (this.meta.orderby) {
+          orderBy2 = `${this.meta.orderby[1]}`;
         }
-        this.page = page;
-        orderBy2 = `${params.sorters[0].field} ${this.togglesort} `;
-      } else {
-        orderBy2 = "";
-      }
-
-      // limit, offset
-      if (this.togglesort === "asc") {
-        offset = (page - 1) * records_per_page;
-        limit = page === last_page ? records - offset : records_per_page;
-      } else {
-        offset = page === last_page ? 0 : records - page * records_per_page;
-        limit =
-          page === last_page
-            ? records - (page - 1) * records_per_page
-            : records_per_page;
       }
 
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            if (orderBy2 !== "") {
-              limit = this.limit;
-              offset = offset = (page - 1) * records_per_page;
-            }
             const queryStartTime = +new Date();
-            // freeze result, make "un"reactive
-            //const results = Object.freeze(await this.runningQuery.execute());
-            let querytext = this.query.text
+
+            let querytext = this.query.text;
             if (this.meta.orderby) {
-              querytext = this.meta.stripped
-              if (orderBy2 !== "") {
-                orderBy2 = `${orderBy2}`
-              } else {
-                orderBy2 = `${this.meta.orderby[1]}`
-              }
+              querytext = this.meta.stripped;
             }
             if (orderBy2 !== "") {
-              orderBy2 = `ORDER BY ${orderBy2}`
+              orderBy2 = `ORDER BY ${orderBy2}`;
             }
-            
+
             let sql = `${querytext} ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
             if (this.meta.limit) {
               sql = `SELECT * FROM ( ${querytext} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
             }
 
-            console.log(sql)
+            console.log(sql);
 
             const query = this.connection.query(sql);
             const response = await query.execute();
@@ -190,12 +172,15 @@ export default {
                 };
                 return result;
               });
-              Object.freeze(columns)
+              Object.freeze(columns);
               this.tabulator.setColumns(columns);
             }
 
-            const data = await this.dataToTableData(response[0], this.tabulator.columnManager.columns);
-            Object.freeze(data)
+            const data = await this.dataToTableData(
+              response[0],
+              this.tabulator.columnManager.columns
+            );
+            Object.freeze(data);
             resolve({
               last_page: last_page,
               data,
