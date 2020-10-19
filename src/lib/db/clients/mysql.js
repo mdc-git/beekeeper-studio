@@ -526,10 +526,11 @@ async function runWithConnection({ pool }, run) {
         return;
       }
 
-      connection.on('error', (error) => {
+      // https://stackoverflow.com/a/41282451
+      /**connection.on('error', (error) => {
         // it will be handled later in the next query execution
         logger().error('Connection fatal error %j', error);
-      });
+      });**/
 
       try {
         resolve(await run(connection));
