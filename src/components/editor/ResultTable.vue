@@ -121,7 +121,7 @@ export default {
       // column sorting
       if (params.sorters[0]) {
         if (params.sorters[0].dir === "asc") {
-          orderBy2 = `-${params.sorters[0].field} desc, ${params.sorters[0].field}`;
+          orderBy2 = `- NULLIF(${params.sorters[0].field},'') desc, ${params.sorters[0].field}`;
         } else {
           orderBy2 = `${params.sorters[0].field} ${params.sorters[0].dir} `;
         }
