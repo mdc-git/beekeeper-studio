@@ -120,10 +120,15 @@ export default {
       console.log(params.sorters);
       // column sorting
       if (params.sorters[0]) {
-        orderBy2 = `${params.sorters[0].field} ${params.sorters[0].dir} `;
+        if (params.sorters[0].dir === "asc") {
+          orderBy2 = `-${params.sorters[0].field} desc, ${params.sorters[0].field}`;
+        } else {
+          orderBy2 = `${params.sorters[0].field} ${params.sorters[0].dir} `;
+        }
+        
       } else {
         if (this.meta.orderby) {
-          orderBy2 = `${this.meta.orderby[1]}`;
+          orderBy2 = `-${this.meta.orderby[1]}`;
         }
       }
 
@@ -209,7 +214,7 @@ export default {
             break;
           case "undefined":
           case "null":
-            col = "(NULL)";
+            col = null;
             break;
         }
         item.push('"' + String(col).split('"').join('""') + '"');
