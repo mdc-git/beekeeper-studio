@@ -147,8 +147,10 @@ export default {
             const queryStartTime = +new Date();
             // freeze result, make "un"reactive
             //const results = Object.freeze(await this.runningQuery.execute());
-
-            let sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            let sql = `${this.query.text} ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            if (this.meta.limit) {
+              sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            }
 
             const query = this.connection.query(sql);
             const response = await query.execute();
