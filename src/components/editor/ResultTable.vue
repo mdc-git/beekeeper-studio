@@ -76,7 +76,7 @@ export default {
     }
   },
   async mounted() {
-    this.tabulator = new Tabulator(this.$refs.tabulator, {
+    const tabulator = new Tabulator(this.$refs.tabulator, {
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
@@ -98,6 +98,8 @@ export default {
         columnHeaders: true,
       },
     });
+    Object.freeze(tabulator)
+    this.tabulator = tabulator
   },
   methods: {
     dataFetch(url, config, params) {
@@ -173,31 +175,34 @@ export default {
             const queryEndTime = +new Date();
             const executeTime = queryEndTime - queryStartTime;
             this.$emit("executeTimeUpdate", executeTime);
+            if (!this.tabulator.getColumns().length) {
+              const fields = response[0].fields;
+              const columnWidth = 50;
+              const columns = fields.map((column) => {
+                const result = {
+                  title: column.name,
+                  field: column.name,
+                  minWidth: columnWidth,
+                  mutatorData: this.resolveDataMutator(
+                    response[0].rows[0][column.name]
+                  ),
+                  formatter: this.cellFormatter,
+                };
+                return result;
+              });
+              Object.freeze(columns)
+              this.tabulator.setColumns(columns);
+            }
 
-            const fields = response[0].fields;
-            const columnWidth = 50;
-            const columns = fields.map((column) => {
-              const result = {
-                title: column.name,
-                field: column.name,
-                minWidth: columnWidth,
-                mutatorData: this.resolveDataMutator(
-                  response[0].rows[0][column.name]
-                ),
-                formatter: this.cellFormatter,
-              };
-              return result;
-            });
-
-            if(!this.tabulator.getColumns().length) this.tabulator.setColumns(columns);
-            const data = await this.dataToTableData(response[0], columns);
+            const data = await this.dataToTableData(response[0], this.tabulator.columnManager.columns);
+            Object.freeze(data)
             resolve({
               last_page: last_page,
               data,
             });
           } catch (error) {
             reject();
-            this.$emit('setError',error)
+            this.$emit("setError", error);
           }
         })();
       });
