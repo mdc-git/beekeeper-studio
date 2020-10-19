@@ -492,13 +492,15 @@ export default {
       // get total result count
       let countsql = `SELECT count(*) count FROM ( ${this.query.text} ) beekeeper_count`;
       const countQuery = await this.connection.query(countsql).execute();
-      const limitre = /LIMIT\s?([0-9]+)(?!.*\)).*$/im
-      const limit = limitre.exec(this.query.text)
+      const orderby = /ORDER\s?BY\s?([a-z]+\s?[a-z]+)(?!.*\))/im.exec(this.query.text)
+      const limit = /LIMIT\s?([0-9]+)(?!.*\)).*$/im.exec(this.query.text)
       // query meta information
       this.meta = {
         // total result count
         count: countQuery[0]?.rows[0]["count"],
-        limit: limit
+        limit: limit,
+        orderby: orderby,
+        stripped: this.query.text.replace(/ORDER\s?BY\s?([a-z]+\s?[a-z]+)(?!.*\))/im,'')
       };
 
       /**

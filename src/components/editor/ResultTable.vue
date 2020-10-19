@@ -120,7 +120,7 @@ export default {
           this.togglesort = this.togglesort === "asc" ? "desc" : "asc";
         }
         this.page = page;
-        orderBy2 = ` ORDER BY ${params.sorters[0].field} ${this.togglesort} `;
+        orderBy2 = `${params.sorters[0].field} ${this.togglesort} `;
       } else {
         orderBy2 = "";
       }
@@ -147,10 +147,25 @@ export default {
             const queryStartTime = +new Date();
             // freeze result, make "un"reactive
             //const results = Object.freeze(await this.runningQuery.execute());
-            let sql = `${this.query.text} ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
-            if (this.meta.limit) {
-              sql = `SELECT * FROM ( ${this.query.text} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            let querytext = this.query.text
+            if (this.meta.orderby) {
+              querytext = this.meta.stripped
+              if (orderBy2 !== "") {
+                orderBy2 = `${orderBy2}`
+              } else {
+                orderBy2 = `${this.meta.orderby[1]}`
+              }
             }
+            if (orderBy2 !== "") {
+              orderBy2 = `ORDER BY ${orderBy2}`
+            }
+            
+            let sql = `${querytext} ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            if (this.meta.limit) {
+              sql = `SELECT * FROM ( ${querytext} ) beekeper_limit ${orderBy2} LIMIT ${limit} OFFSET ${offset}`;
+            }
+
+            console.log(sql)
 
             const query = this.connection.query(sql);
             const response = await query.execute();
